@@ -15,4 +15,8 @@
     <Folder Include="External DLL\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NiceCleanLib\NiceCleanLib.csproj" />
+  </ItemGroup>
+
 </Project>
