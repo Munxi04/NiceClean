@@ -4,6 +4,9 @@ using System.Text;
 
 namespace NiceCleanLib.Enums;
 
-internal class PinStatus
+public enum PinStatus
 {
+    Unverified,
+    Verified,
+    Deleted
 }

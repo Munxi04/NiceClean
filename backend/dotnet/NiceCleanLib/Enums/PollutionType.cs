@@ -4,6 +4,9 @@ using System.Text;
 
 namespace NiceCleanLib.Enums;
 
-internal class PollutionType
+public enum PollutionType
 {
+    Plastic,
+    Glass,
+    Furniture
 }

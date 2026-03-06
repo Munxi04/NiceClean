@@ -4,6 +4,11 @@ using System.Text;
 
 namespace NiceCleanLib.Enums;
 
-public class PollutionSeverity
+public enum PollutionSeverity
 {
+    Low = 1,
+    Moderate = 2,
+    High = 3,
+    VeryHigh = 4,
+    Extreme = 5
 }
