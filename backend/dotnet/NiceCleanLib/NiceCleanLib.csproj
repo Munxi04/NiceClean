@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Data\" />
     <Folder Include="Services\Interfaces\" />
-    <Folder Include="Services\Repositories\" />
   </ItemGroup>
 
 </Project>
