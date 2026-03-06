@@ -1,3 +1,4 @@
+using NiceCleanLib.Services.Interfaces;
 using NiceCleanLib.Services.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,8 +9,8 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<PinRepository>();
-builder.Services.AddSingleton<UserRepository>();
+builder.Services.AddSingleton<IPinRepository, PinRepository>();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
