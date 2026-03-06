@@ -2,7 +2,7 @@
 
 public class User
 {
-    public int UserId { get; }
+    public int Id { get; set; }
     public string Email { get; set; }
     public string Password { get; set; }
     public DateTime Date { get; set; }
@@ -10,9 +10,9 @@ public class User
     public int NumberOfWalks { get; set; }
     public bool IsVerified { get; set; }
 
-    public User(int userId, string email, string password, DateTime date, string nickname, int numberOfWalks, bool isVerified)
+    public User(int id, string email, string password, DateTime date, string nickname, int numberOfWalks, bool isVerified)
     {
-        UserId = userId;
+        Id = id;
         Email = email;
         Password = password;
         Date = date;

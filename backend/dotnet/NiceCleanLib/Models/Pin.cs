@@ -7,7 +7,7 @@ namespace NiceCleanLib.Models;
 
 public class Pin
 {
-    public int PinId { get; }
+    public int Id { get; set; }
     public DateTime Date { get; set; }
     public string Name { get; set; }
     public PollutionSeverity Severity { get; set; }
@@ -15,9 +15,9 @@ public class Pin
     public int Radius { get; set; }
     public PinStatus Status { get; set; }
 
-    public Pin(int pinId, DateTime date, string name, PollutionSeverity severity, PollutionType pollutionType, int radius, PinStatus status)
+    public Pin(int id, DateTime date, string name, PollutionSeverity severity, PollutionType pollutionType, int radius, PinStatus status)
     {
-        PinId = pinId;
+        Id = id;
         Date = date;
         Name = name;
         Severity = severity;

@@ -17,17 +17,17 @@ public class PinRepository
 
     public Pin? GetById(int id)
     {
-        return _pins.FirstOrDefault(s => s.Id == id);
+        return _pins.FirstOrDefault(p => p.Id == id);
     }
 
-    public Pin Add(Pin sensor)
+    public Pin Add(Pin pin)
     {
-        sensor.Id = _nextId++;
-        _pins.Add(sensor);
-        return sensor;
+        pin.Id = _nextId++;
+        _pins.Add(pin);
+        return pin;
     }
 
-    public Pin? Update(int id, Pin sensor)
+    public Pin? Update(int id, Pin pin)
     {
         var existing = GetById(id);
         if (existing == null)
@@ -37,19 +37,19 @@ public class PinRepository
 
         var index = _pins.IndexOf(existing);
 
-        sensor.Id = id;
+        pin.Id = id;
 
-        _pins[index] = sensor;
-        return sensor;
+        _pins[index] = pin;
+        return pin;
     }
 
     public Pin? Delete(int id)
     {
-        Pin? sensor = GetById(id);
-        if (sensor != null)
+        Pin? pin = GetById(id);
+        if (pin != null)
         {
-            _pins.Remove(sensor);
+            _pins.Remove(pin);
         }
-        return sensor;
+        return pin;
     }
 }
