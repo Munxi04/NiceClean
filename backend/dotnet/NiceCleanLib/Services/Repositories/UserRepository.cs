@@ -1,4 +1,5 @@
 ﻿using NiceCleanLib.Models;
+using NiceCleanLib.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Xml.Linq;
 
 namespace NiceCleanLib.Services.Repositories;
 
-public class UserRepository
+public class UserRepository : IUserRepository
 {
     private readonly List<User> _users = new();
     private int _nextId = 1;

@@ -1,11 +1,12 @@
 ﻿using NiceCleanLib.Models;
+using NiceCleanLib.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace NiceCleanLib.Services.Repositories;
 
-public class PinRepository
+public class PinRepository : IPinRepository
 {
     private readonly List<Pin> _pins = new();
     private int _nextId = 1;
