@@ -10,18 +10,18 @@ public class Pin
     public DateTime Date { get; set; }
     public string Name { get; set; }
     public string Severity { get; set; }
-    public string PinType { get; set; }
+    public string PollutionType { get; set; }
     public int Radius { get; set; }
-    public string PinStatus { get; set; }
+    public string Status { get; set; }
 
-    public Pin(int pinId, DateTime date, string name, string severity, string pinType, int radius, string pinStatus)
+    public Pin(int pinId, DateTime date, string name, string pollutionSeverity, string pollutionType, int radius, string pinStatus)
     {
         PinId = pinId;
         Date = date;
         Name = name;
-        Severity = severity;
-        PinType = pinType;
+        Severity = pollutionSeverity;
+        PollutionType = pollutionType;
         Radius = radius;
-        PinStatus = pinStatus;
+        Status = pinStatus;
     }
 }
