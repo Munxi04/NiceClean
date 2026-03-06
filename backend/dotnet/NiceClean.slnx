@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="NiceCleanLib/NiceCleanLib.csproj" />
+  <Project Path="NiceCleanREST/NiceCleanREST.csproj" Id="5259e0f8-9398-4740-b421-1c6b7f7c78be" />
+</Solution>

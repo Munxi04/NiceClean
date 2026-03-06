@@ -1,0 +1,6 @@
+@NiceCleanREST_HostAddress = http://localhost:5249
+
+GET {{NiceCleanREST_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

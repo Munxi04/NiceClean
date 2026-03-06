@@ -1,0 +1,22 @@
+# Build folders
+bin/
+obj/
+
+# Visual Studio / VS Code files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node / frontend
+node_modules/
+
+# Logs
+*.log
+
+# Secrets
+appsettings.json
+appsettings.Development.json
+secrets.json
+.env
