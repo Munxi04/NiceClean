@@ -68,7 +68,7 @@ public class PinController : ControllerBase
 
         var pin = new Pin(
             id: 0,
-            date: DateTime.Now,
+            date: DateTime.UtcNow,
             name: dto.Name,
             severity: dto.Severity,
             pollutionType: dto.PollutionType,
