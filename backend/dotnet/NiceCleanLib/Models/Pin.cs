@@ -14,8 +14,10 @@ public class Pin
     public PollutionType PollutionType { get; set; }
     public int Radius { get; set; }
     public PinStatus Status { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
 
-    public Pin(int id, DateTime date, string name, PollutionSeverity severity, PollutionType pollutionType, int radius, PinStatus status)
+    public Pin(int id, DateTime date, string name, PollutionSeverity severity, PollutionType pollutionType, int radius, PinStatus status, double latitude, double longitude)
     {
         Id = id;
         Date = date;
@@ -24,5 +26,7 @@ public class Pin
         PollutionType = pollutionType;
         Radius = radius;
         Status = status;
+        Latitude = latitude;
+        Longitude = longitude;
     }
 }
