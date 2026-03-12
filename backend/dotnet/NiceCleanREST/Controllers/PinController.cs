@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NiceCleanLib.Enums;
 using NiceCleanLib.Models;
 using NiceCleanLib.Services.Interfaces;
+using NiceCleanREST.Contracts;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -52,8 +54,20 @@ public class PinController : ControllerBase
     // POST api/<PinController>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    public ActionResult<Pin> Post(Pin pin)
+    public ActionResult<Pin> Post([FromBody] PinCreateDto dto)
     {
+        var pin = new Pin(
+            id: 0,
+            date: DateTime.Now,
+            name: dto.Name,
+            severity: dto.Severity,
+            pollutionType: dto.PollutionType,
+            radius: 100,
+            status: PinStatus.Unverified,
+            latitude: dto.Latitude,
+            longitude: dto.Longitude
+        );
+
         var created = _repo.Add(pin);
 
         return Created(
