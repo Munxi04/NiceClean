@@ -12,11 +12,15 @@ namespace NiceCleanREST.Controllers;
 [ApiController]
 public class PinController : ControllerBase
 {
-    private readonly IPinRepository _repo;
+    private const int WalksThresholdForVerify = 10;
+    
+    private readonly IPinRepository _pinRepo;
+    private readonly IUserRepository _userRepo;
 
-    public PinController(IPinRepository repo)
+    public PinController(IPinRepository pinRepo, IUserRepository userRepo)
     {
-        _repo = repo;
+        _pinRepo = pinRepo;
+        _userRepo = userRepo;
     }
 
     // GET: api/<PinController>
@@ -25,7 +29,7 @@ public class PinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public ActionResult<IEnumerable<Pin>> Get()
     {
-        var result = _repo.GetAll();
+        var result = _pinRepo.GetAll();
 
         if (result.Count == 0)
         {
@@ -41,7 +45,7 @@ public class PinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<Pin> GetById(int id)
     {
-        var pin = _repo.GetById(id);
+        var pin = _pinRepo.GetById(id);
 
         if (pin == null)
         {
@@ -56,6 +60,12 @@ public class PinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     public ActionResult<Pin> Post([FromBody] PinCreateDto dto)
     {
+        var user = _userRepo.GetById(dto.UserId);
+
+        var isTrusted = (user?.NumberOfWalks ?? 0) >= WalksThresholdForVerify || (user?.IsVerified ?? false);
+
+        var initialStatus = isTrusted ? PinStatus.Verified : PinStatus.Unverified;
+
         var pin = new Pin(
             id: 0,
             date: DateTime.Now,
@@ -63,12 +73,12 @@ public class PinController : ControllerBase
             severity: dto.Severity,
             pollutionType: dto.PollutionType,
             radius: 100,
-            status: PinStatus.Unverified,
+            status: initialStatus,
             latitude: dto.Latitude,
             longitude: dto.Longitude
         );
 
-        var created = _repo.Add(pin);
+        var created = _pinRepo.Add(pin);
 
         return Created(
             Url.ActionContext.HttpContext.Request.Path + "/" + created.Id,
@@ -82,7 +92,7 @@ public class PinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<Pin> Put(int id, Pin pinData)
     {
-        var updated = _repo.Update(id, pinData);
+        var updated = _pinRepo.Update(id, pinData);
 
         if (updated == null)
         {
@@ -98,7 +108,7 @@ public class PinController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<Pin> Delete(int id)
     {
-        var deleted = _repo.Delete(id);
+        var deleted = _pinRepo.Delete(id);
 
         if (deleted == null)
         {
