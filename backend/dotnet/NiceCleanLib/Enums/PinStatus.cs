@@ -8,5 +8,6 @@ public enum PinStatus
 {
     Unverified,
     Verified,
+    Cleaned,
     Deleted
 }

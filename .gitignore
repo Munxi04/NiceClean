@@ -15,8 +15,11 @@ node_modules/
 # Logs
 *.log
 
-# Secrets
-appsettings.json
+# Secrets - exclude environment-specific files but keep base template
 appsettings.Development.json
+appsettings.Production.json
+appsettings.*.json
+secrets.json
+*.env
 secrets.json
 .env

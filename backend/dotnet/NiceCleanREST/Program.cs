@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using NiceCleanLib.Data;
 using NiceCleanLib.Services.Interfaces;
 using NiceCleanLib.Services.Repositories;
 
@@ -9,6 +11,13 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+
+// Database configuration
+var connectionString = builder.Configuration.GetConnectionString("NiceClean");
+builder.Services.AddDbContext<NiceCleanDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+// In-memory repositories (for development)
 builder.Services.AddSingleton<IPinRepository, PinRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 

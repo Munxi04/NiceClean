@@ -68,14 +68,15 @@ public class PinController : ControllerBase
 
         var pin = new Pin(
             id: 0,
-            date: DateTime.UtcNow,
-            name: dto.Name,
+            userId: dto.UserId,
+            creationDate: DateTime.UtcNow,
             severity: dto.Severity,
-            pollutionType: dto.PollutionType,
-            radius: 100,
+            radius: dto.Radius,
             status: initialStatus,
+            pollutionType: dto.PollutionType,
             latitude: dto.Latitude,
-            longitude: dto.Longitude
+            longitude: dto.Longitude,
+            locationName: dto.LocationName
         );
 
         var created = _pinRepo.Add(pin);

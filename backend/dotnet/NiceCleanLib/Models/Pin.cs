@@ -8,25 +8,27 @@ namespace NiceCleanLib.Models;
 public class Pin
 {
     public int Id { get; set; }
-    public DateTime Date { get; set; }
-    public string Name { get; set; }
+    public int UserId { get; set; }
+    public DateTime CreationDate { get; set; }
     public PollutionSeverity Severity { get; set; }
-    public PollutionType PollutionType { get; set; }
-    public int Radius { get; set; }
+    public double Radius { get; set; }
     public PinStatus Status { get; set; }
+    public PollutionType PollutionType { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
+    public string LocationName { get; set; }
 
-    public Pin(int id, DateTime date, string name, PollutionSeverity severity, PollutionType pollutionType, int radius, PinStatus status, double latitude, double longitude)
+    public Pin(int id, int userId, DateTime creationDate, PollutionSeverity severity, double radius, PinStatus status, PollutionType pollutionType, double latitude, double longitude, string locationName)
     {
         Id = id;
-        Date = date;
-        Name = name;
+        UserId = userId;
+        CreationDate = creationDate;
         Severity = severity;
-        PollutionType = pollutionType;
         Radius = radius;
         Status = status;
+        PollutionType = pollutionType;
         Latitude = latitude;
         Longitude = longitude;
+        LocationName = locationName;
     }
 }
