@@ -17,7 +17,11 @@ var connectionString = builder.Configuration.GetConnectionString("NiceClean");
 builder.Services.AddDbContext<NiceCleanDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// In-memory repositories (for development)
+// Reposistories for database:
+//builder.Services.AddScoped<IPinRepository, PinRepositoryDB>();
+//builder.Services.AddScoped<IUserRepository, UserRepositoryDB>();
+
+// Reposistories for testing with a collection in-memory:
 builder.Services.AddSingleton<IPinRepository, PinRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 
