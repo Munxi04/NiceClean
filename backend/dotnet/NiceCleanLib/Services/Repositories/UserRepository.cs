@@ -22,6 +22,11 @@ public class UserRepository : IUserRepository
         return _users.FirstOrDefault(u => u.Id == id);
     }
 
+    public User? GetByEmail(string email)
+    {
+        return _users.FirstOrDefault(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase));
+    }
+
     public User Add(User user)
     {
         user.Id = _nextId++;
