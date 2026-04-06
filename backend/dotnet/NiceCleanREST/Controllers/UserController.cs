@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NiceCleanLib.Models;
 using NiceCleanLib.Services.Interfaces;
+using NiceCleanREST.Contracts;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -60,6 +61,27 @@ public class UserController : ControllerBase
             Url.ActionContext.HttpContext.Request.Path + "/" + created.Id,
             created
         );
+    }
+
+    // POST api/<UserController>/login
+    [HttpPost("login")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public ActionResult<User> Login([FromBody] LoginDto loginDto)
+    {
+        var user = _repo.GetByEmail(loginDto.Email);
+
+        if (user == null)
+        {
+            return Unauthorized("Invalid email or password.");
+        }
+
+        if (user.Password != loginDto.Password)
+        {
+            return Unauthorized("Invalid email or password.");
+        }
+
+        return Ok(user);
     }
 
     // PUT api/<UserController>/5
