@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Pages/MapPage.xaml -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.Maui"
+             x:Class="NiceCleanApp.Pages.MapPage"
+             Title="Map">
+    <Grid RowDefinitions="*,Auto">
+        <!-- The Map Control from Mapsui -->
+        <mapsui:MapControl x:Name="MainMap"
+                           Grid.Row="0"
+                           MapClicked="OnMapClicked" />
+
+        <!-- Bottom Tab Bar -->
+        <Grid Grid.Row="1"
+              BackgroundColor="{AppThemeBinding Light={StaticResource LightSecondaryBackground}, Dark={StaticResource DarkSecondaryBackground}}"
+              Padding="10,5"
+              ColumnDefinitions="*,*,*,*">
+
+            <!-- Map Tab -->
+            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                <ImageButton Source="{StaticResource IconDashboard}" 
+                             BackgroundColor="Transparent"
+                             Clicked="OnMapTabClicked"
+                             HorizontalOptions="Center" />
+                <Label Text="Map" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
+            <!-- Place Pin Tab -->
+            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                <ImageButton Source="{StaticResource IconAdd}" 
+                             BackgroundColor="Transparent"
+                             Clicked="OnPlacePinTabClicked"
+                             HorizontalOptions="Center" />
+                <Label Text="Place Pin" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
+            <!-- Events Tab -->
+            <VerticalStackLayout Grid.Column="2" Spacing="2">
+                <ImageButton Source="{StaticResource IconProjects}" 
+                             BackgroundColor="Transparent"
+                             Clicked="OnEventsTabClicked"
+                             HorizontalOptions="Center" />
+                <Label Text="Events" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+
+            <!-- Menu Tab -->
+            <VerticalStackLayout Grid.Column="3" Spacing="2">
+                <ImageButton Source="{StaticResource IconMeta}" 
+                             BackgroundColor="Transparent"
+                             Clicked="OnMenuTabClicked"
+                             HorizontalOptions="Center" />
+                <Label Text="Menu" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

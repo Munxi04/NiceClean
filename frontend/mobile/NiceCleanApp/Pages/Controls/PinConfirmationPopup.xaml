@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="NiceCleanApp.Pages.Controls.PinConfirmationPopup"
+               CanBeDismissedByTappingOutside="True">
+	<Grid RowDefinitions="Auto,Auto,Auto"
+          BackgroundColor="{AppThemeBinding Light={StaticResource LightSecondaryBackground}, Dark={StaticResource DarkSecondaryBackground}}"
+          Padding="20"
+          VerticalOptions="End"
+          HorizontalOptions="Fill">
+		<Grid.GestureRecognizers>
+			<TapGestureRecognizer Tapped="OnBackgroundTapped" />
+		</Grid.GestureRecognizers>
+
+		<Label Text="Verify Pollution" 
+               Style="{StaticResource Title3}" 
+               HorizontalOptions="Center" 
+               Margin="0,0,0,20" />
+
+		<Label Grid.Row="1" 
+               Text="Confirm or deny that the report is accurate" 
+               Style="{StaticResource Body1}" 
+               HorizontalOptions="Center" 
+               Margin="0,0,0,20" />
+
+		<VerticalStackLayout Grid.Row="2" Spacing="10">
+			<Button Text="Confirm" 
+                    BackgroundColor="Green" 
+                    TextColor="White"
+                    Clicked="OnConfirmClicked" />
+			<Button Text="Deny" 
+                    BackgroundColor="Red" 
+                    TextColor="White"
+                    Clicked="OnDenyClicked" />
+		</VerticalStackLayout>
+	</Grid>
+</toolkit:Popup>
