@@ -52,7 +52,7 @@ public partial class MapPage : ContentPage
             Layers = { OpenStreetMap.CreateTileLayer(), _pinLayer }
         };
 
-        MainMap.Map.Widgets.Add(new ZoomInOutWidget { Margin = new MRect(20, 40, 0, 0) });
+        MainMap.Map.Widgets.Add(new ZoomInOutWidget { Margin = new MRect(0, 0, 20, 40) });
         MainMap.Map.Widgets.Add(new ScaleBarWidget(MainMap.Map)
         {
             TextAlignment = Alignment.Center,
