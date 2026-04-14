@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace NiceCleanApp
+﻿namespace NiceCleanApp
 {
     public partial class App : Application
     {

@@ -1,44 +1,58 @@
-// Pages/MapPage.xaml.cs
+using CommunityToolkit.Maui.Core;
+using CommunityToolkit.Maui.Extensions;
 using Mapsui;
+using Mapsui.Extensions;
+using Mapsui.Layers;
 using Mapsui.Projections;
 using Mapsui.Styles;
+using Mapsui.Tiling;
 using Mapsui.UI.Maui;
-using Mapsui.Utilities;
-using Mapsui.Layers;
-using Mapsui.Extensions;
 using Mapsui.Widgets;
+using Mapsui.Widgets.ButtonWidgets;
 using Mapsui.Widgets.ScaleBar;
-using Mapsui.Widgets.Zoom;
-using NiceCleanApp.Services; // For your ApiService
-using CommunityToolkit.Maui.Views;
-using Mapsui.UI;
-using Color = Microsoft.Maui.Graphics.Color;
+using NiceCleanApp.Pages.Controls;
+using NiceCleanApp.Services;
+using HorizontalAlignment = Mapsui.Widgets.HorizontalAlignment;
 using Map = Mapsui.Map;
+using VerticalAlignment = Mapsui.Widgets.VerticalAlignment;
+using Pin = NiceCleanApp.Services.Pin;
+using Mapsui.Nts;
 
 namespace NiceCleanApp.Pages;
 
 public partial class MapPage : ContentPage
 {
+    private readonly IClient _apiClient;
+
+    // Single shared layer — all pins live here
+    private readonly GenericCollectionLayer<List<IFeature>> _pinLayer = new();
+
     private bool _isPlacingPin;
     private MPoint? _pendingPinLocation;
 
-    public MapPage()
+    // TODO: Replace with real user from auth session
+    private const int CurrentUserId = 1;
+
+    public MapPage(IClient apiClient)
     {
         InitializeComponent();
+        _apiClient = apiClient;
         InitializeMap();
     }
+
+    // ──────────────────────────────────────────────
+    // Map setup
+    // ──────────────────────────────────────────────
 
     private void InitializeMap()
     {
         MainMap.Map = new Map
         {
             CRS = "EPSG:3857",
-            // You can change the tile provider here if you prefer a different style
-            Layers = { OpenStreetMap.CreateTileLayer() }
+            Layers = { OpenStreetMap.CreateTileLayer(), _pinLayer }
         };
 
-        // Add zoom and scale bar widgets for better user experience
-        MainMap.Map.Widgets.Add(new ZoomInOutWidget { MarginX = 20, MarginY = 40 });
+        MainMap.Map.Widgets.Add(new ZoomInOutWidget { Margin = new MRect(20, 40, 0, 0) });
         MainMap.Map.Widgets.Add(new ScaleBarWidget(MainMap.Map)
         {
             TextAlignment = Alignment.Center,
@@ -46,82 +60,116 @@ public partial class MapPage : ContentPage
             VerticalAlignment = VerticalAlignment.Top
         });
 
-        // Set initial view to Nice, France
-        var niceCoordinates = SphericalMercator.FromLonLat(7.2620, 43.7102);
-        MainMap.Map.Navigator.CenterOnAndZoomTo(niceCoordinates, 12);
+        // Centre on Nice, France
+        var nice = SphericalMercator.FromLonLat(7.2620, 43.7102);
+        MainMap.Map.Navigator.CenterOnAndZoomTo(new MPoint(nice), 12);
     }
+
+    // ──────────────────────────────────────────────
+    // Lifecycle
+    // ──────────────────────────────────────────────
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await RequestLocationPermission();
+        await RequestLocationPermissionAsync();
+        await LoadExistingPinsAsync();
     }
 
-    private async Task RequestLocationPermission()
+    private static async Task RequestLocationPermissionAsync()
     {
         var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
         if (status != PermissionStatus.Granted)
+            await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+    }
+
+    // ──────────────────────────────────────────────
+    // Load existing pins from API
+    // ──────────────────────────────────────────────
+
+    private async Task LoadExistingPinsAsync()
+    {
+        try
         {
-            status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            var pins = await _apiClient.PinAllAsync();
+            _pinLayer.Features.Clear();
+
+            foreach (var pin in pins)
+                AddPinFeatureToLayer(pin);
+
+            MainMap.Map.Refresh();
         }
+        catch (Exception ex)
+        {
+            await AppShell.DisplaySnackbarAsync($"Could not load pins: {ex.Message}");
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // Place-pin flow
+    // ──────────────────────────────────────────────
+
+    private void OnPlacePinTabClicked(object? sender, EventArgs e)
+    {
+        _isPlacingPin = true;
+        PlacingPinBanner.IsVisible = true;
     }
 
     private void OnMapClicked(object? sender, MapClickedEventArgs e)
     {
         if (!_isPlacingPin) return;
-
-        _pendingPinLocation = e.Point;
+        _pendingPinLocation = e.Point.ToMapsui();
         _isPlacingPin = false;
-        ShowPinConfirmationSheet();
+        PlacingPinBanner.IsVisible = false;
+
+        ShowPinConfirmationPopup();
     }
 
-    private void OnPlacePinTabClicked(object? sender, EventArgs e)
-    {
-        _isPlacingPin = true;
-        AppShell.DisplayToastAsync("Tap on the map to place a pollution pin");
-    }
-
-    private async void ShowPinConfirmationSheet()
-    {
-        var popup = new PinConfirmationPopup(_pendingPinLocation);
-        var result = await this.ShowPopupAsync(popup);
-
-        if (result is bool confirmed && confirmed)
-        {
-            await CreatePollutionPin();
-        }
-        else
-        {
-            _pendingPinLocation = null;
-        }
-    }
-
-    private async Task CreatePollutionPin()
+    private async void ShowPinConfirmationPopup()
     {
         if (_pendingPinLocation == null) return;
 
-        int currentUserId = 1; // TODO: Replace with actual user ID from auth
+        var popup = new PinConfirmationPopup(_pendingPinLocation);
+        this.ShowPopup(popup);
+        var result = await popup.Result;
 
-        var pinDto = new
+        if (result != null)
+            await CreatePollutionPinAsync(result);
+        else
+            _pendingPinLocation = null;
+    }
+
+    // ──────────────────────────────────────────────
+    // Create pin via API
+    // ──────────────────────────────────────────────
+
+    private async Task CreatePollutionPinAsync(PinConfirmationPopup.PinConfirmationResult result)
+    {
+        if (_pendingPinLocation == null) return;
+
+        var (lon, lat) = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y);
+
+        var dto = new PinCreateDto // TODO: Map PinConfirmationResult to PinCreateDTO from API layer
         {
-            UserId = currentUserId,
-            Latitude = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y).lat,
-            Longitude = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y).lon,
-            Severity = 3,
-            PollutionType = 0,
+            UserId = CurrentUserId,
+            Severity = result.Severity,
             Radius = 100.0,
-            LocationName = "Reported via app"
+            PollutionType = result.Type,
+            Latitude = lat,
+            Longitude = lon,
+            LocationName = result.LocationName
         };
 
         try
         {
-            var createdPin = await ApiService.PostPinAsync(pinDto);
-            AddPinToMap(createdPin);
-            AppShell.DisplayToastAsync("Pin reported successfully!");
+            var createdPin = await _apiClient.PinPOSTAsync(dto);
+            AddPinFeatureToLayer(createdPin);
+            MainMap.Map.Refresh();
+            await AppShell.DisplaySnackbarAsync("Pin reported successfully!");
         }
         catch (Exception ex)
         {
-            AppShell.DisplaySnackbarAsync($"Error: {ex.Message}");
+            await AppShell.DisplaySnackbarAsync($"Error: {ex.Message}");
         }
         finally
         {
@@ -129,26 +177,49 @@ public partial class MapPage : ContentPage
         }
     }
 
-    private void AddPinToMap(NiceCleanApp.Models.Pin pinData)
-    {
-        var pinLayer = new GenericCollectionLayer<List<IFeature>>
-        {
-            Style = SymbolStyles.CreatePinStyle(Color.FromArgb("#FF3300"))
-        };
+    // ──────────────────────────────────────────────
+    // Map rendering helpers
+    // ──────────────────────────────────────────────
 
-        var point = SphericalMercator.FromLonLat(pinData.Longitude, pinData.Latitude);
+    private void AddPinFeatureToLayer(Pin pin)
+    {
+        var point = SphericalMercator.FromLonLat(pin.Longitude, pin.Latitude);
         var feature = new GeometryFeature
         {
-            Geometry = point,
-            ["Label"] = $"Severity: {pinData.Severity}"
+            Geometry = new NetTopologySuite.Geometries.Point(point),
+            ["Label"] = $"{pin.PollutionType} – {pin.Severity}"
         };
 
-        pinLayer?.Features.Add(feature);
-        MainMap.Map.Layers.Add(pinLayer);
-        MainMap.Map.Refresh();
+        feature.Styles.Add(new SymbolStyle
+        {
+            Fill = new Mapsui.Styles.Brush(GetPinMapsuiColor(pin.Status)),
+            Line = new Pen(Mapsui.Styles.Color.White, 2),
+            SymbolScale = 0.8
+        });
+
+        _pinLayer.Features.Add(feature);
     }
 
-    private void OnMapTabClicked(object? sender, EventArgs e) { /* Already on map */ }
-    private void OnEventsTabClicked(object? sender, EventArgs e) { /* TODO */ }
-    private void OnMenuTabClicked(object? sender, EventArgs e) { Shell.Current.FlyoutIsPresented = true; }
+    /// <summary>
+    /// Color by pin status:
+    ///   Unverified → orange
+    ///   Verified   → red
+    ///   Cleaned    → green
+    ///   Deleted    → grey
+    /// </summary>
+    private static Mapsui.Styles.Color GetPinMapsuiColor(PinStatus status) => status switch
+    {
+        PinStatus.Verified => new Mapsui.Styles.Color(255, 51, 0),   // #FF3300
+        PinStatus.Cleaned => new Mapsui.Styles.Color(0, 170, 68),  // #00AA44
+        PinStatus.Deleted => new Mapsui.Styles.Color(136, 136, 136), // #888888
+        _ => new Mapsui.Styles.Color(255, 153, 0)    // #FF9900 Unverified
+    };
+
+    // ──────────────────────────────────────────────
+    // Bottom tab bar handlers
+    // ──────────────────────────────────────────────
+
+    private void OnMapTabClicked(object? sender, EventArgs e) { /* already on map */ }
+    private void OnEventsTabClicked(object? sender, EventArgs e) { /* TODO: navigate to cleanwalks */ }
+    private void OnMenuTabClicked(object? sender, EventArgs e) => Shell.Current.FlyoutIsPresented = true;
 }

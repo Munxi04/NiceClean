@@ -1,38 +1,86 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-               x:Class="NiceCleanApp.Pages.Controls.PinConfirmationPopup"
-               CanBeDismissedByTappingOutside="True">
-	<Grid RowDefinitions="Auto,Auto,Auto"
-          BackgroundColor="{AppThemeBinding Light={StaticResource LightSecondaryBackground}, Dark={StaticResource DarkSecondaryBackground}}"
-          Padding="20"
-          VerticalOptions="End"
-          HorizontalOptions="Fill">
-		<Grid.GestureRecognizers>
-			<TapGestureRecognizer Tapped="OnBackgroundTapped" />
-		</Grid.GestureRecognizers>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="NiceCleanApp.Pages.Controls.PinConfirmationPopup"
+    CanBeDismissedByTappingOutsideOfPopup="True"
+    Background="Transparent">
 
-		<Label Text="Verify Pollution" 
-               Style="{StaticResource Title3}" 
-               HorizontalOptions="Center" 
-               Margin="0,0,0,20" />
+    <Border
+        BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}"
+        StrokeShape="RoundRectangle 16"
+        StrokeThickness="0"
+        Padding="24"
+        WidthRequest="320">
 
-		<Label Grid.Row="1" 
-               Text="Confirm or deny that the report is accurate" 
-               Style="{StaticResource Body1}" 
-               HorizontalOptions="Center" 
-               Margin="0,0,0,20" />
+        <VerticalStackLayout Spacing="20">
 
-		<VerticalStackLayout Grid.Row="2" Spacing="10">
-			<Button Text="Confirm" 
-                    BackgroundColor="Green" 
+            <!-- Header -->
+            <VerticalStackLayout Spacing="4">
+                <Label
+                    Text="Report Pollution"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}" />
+                <Label
+                    x:Name="LocationLabel"
+                    Text="Fill in the details below"
+                    FontSize="13"
+                    TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}" />
+            </VerticalStackLayout>
+
+            <!-- Severity -->
+            <VerticalStackLayout Spacing="8">
+                <Label
+                    Text="Severity"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}" />
+                <Picker
+                    x:Name="SeverityPicker"
+                    Title="Select severity"
+                    TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}"
+                    BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2C}"
+                    TitleColor="#888888" />
+            </VerticalStackLayout>
+
+            <!-- Pollution Type -->
+            <VerticalStackLayout Spacing="8">
+                <Label
+                    Text="Pollution Type"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}" />
+                <Picker
+                    x:Name="TypePicker"
+                    Title="Select type"
+                    TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}"
+                    BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2C}"
+                    TitleColor="#888888" />
+            </VerticalStackLayout>
+
+            <!-- Buttons -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,4,0,0">
+                <Button
+                    Grid.Column="0"
+                    Text="Cancel"
+                    Clicked="OnCancelClicked"
+                    BackgroundColor="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                    TextColor="{AppThemeBinding Light=#444444, Dark=#CCCCCC}"
+                    CornerRadius="10"
+                    HeightRequest="48" />
+                <Button
+                    Grid.Column="1"
+                    Text="Report"
+                    Clicked="OnConfirmClicked"
+                    BackgroundColor="#FF3300"
                     TextColor="White"
-                    Clicked="OnConfirmClicked" />
-			<Button Text="Deny" 
-                    BackgroundColor="Red" 
-                    TextColor="White"
-                    Clicked="OnDenyClicked" />
-		</VerticalStackLayout>
-	</Grid>
+                    CornerRadius="10"
+                    HeightRequest="48" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </Border>
+
 </toolkit:Popup>

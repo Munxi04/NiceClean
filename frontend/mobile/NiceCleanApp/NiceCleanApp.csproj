@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0-android</TargetFrameworks>
@@ -67,15 +67,37 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="12.3.0" />
 		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.8" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<!-- NSwag packages for API client generation. -->
+		<PackageReference Include="NSwag.ApiDescription.Client" Version="14.7.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<!-- Refit packages for API client generation -->
+		<PackageReference Include="Refit" Version="10.1.6" />
+		<PackageReference Include="Refit.HttpClientFactory" Version="10.1.6" />
 		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
 		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.8" />
-		<PackageReference Include="Mapsui.Maui" Version="5.1.0" />
+		<PackageReference Include="Mapsui.Maui" Version="5.1.0-beta.5" />
 	</ItemGroup>
+
+	<!-- NSwag code generation-->
 	
+	<!-- Download swagger.json from Azure -->
+	<Target Name="DownloadSwaggerJson" BeforeTargets="BeforeBuild" Condition="!Exists('$(ProjectDir)OpenAPIs\swagger.json')">
+		<DownloadFile SourceUrl="https://nicecleanrest.azurewebsites.net/swagger/v1/swagger.json" DestinationFolder="$(ProjectDir)OpenAPIs" DestinationFileName="swagger.json" Retries="3" ContinueOnError="false" />
+	</Target>
+
+	<!-- Generate Refit client from downloaded spec -->
+	<Target Name="GenerateApiClient" BeforeTargets="BeforeBuild" DependsOnTargets="DownloadSwaggerJson" Condition="Exists('$(ProjectDir)OpenAPIs\swagger.json')">
+
+		<Exec Command="$(NSwagExe) openapi2csclient /input:$(ProjectDir)OpenAPIs\swagger.json /output:$(ProjectDir)Services\ApiClient.cs /namespace:NiceCleanApp.Services /GenerateClientInterfaces:true /GenerateDtoTypes:true /UseBaseUrl:false" />
+		<!-- Include the generated file in compilation -->
+		<ItemGroup>
+			<Compile Include="$(ProjectDir)Services\ApiClient.cs" />
+		</ItemGroup>
+	</Target>
 </Project>

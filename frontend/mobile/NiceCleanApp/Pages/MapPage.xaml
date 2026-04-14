@@ -1,57 +1,131 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Pages/MapPage.xaml -->
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.Maui"
-             x:Class="NiceCleanApp.Pages.MapPage"
-             Title="Map">
-    <Grid RowDefinitions="*,Auto">
-        <!-- The Map Control from Mapsui -->
-        <mapsui:MapControl x:Name="MainMap"
-                           Grid.Row="0"
-                           MapClicked="OnMapClicked" />
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
+    x:Class="NiceCleanApp.Pages.MapPage"
+    Title="Map"
+    Shell.NavBarIsVisible="False">
 
-        <!-- Bottom Tab Bar -->
-        <Grid Grid.Row="1"
-              BackgroundColor="{AppThemeBinding Light={StaticResource LightSecondaryBackground}, Dark={StaticResource DarkSecondaryBackground}}"
-              Padding="10,5"
-              ColumnDefinitions="*,*,*,*">
+    <Grid RowDefinitions="*, Auto">
 
-            <!-- Map Tab -->
-            <VerticalStackLayout Grid.Column="0" Spacing="2">
-                <ImageButton Source="{StaticResource IconDashboard}" 
-                             BackgroundColor="Transparent"
-                             Clicked="OnMapTabClicked"
-                             HorizontalOptions="Center" />
-                <Label Text="Map" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
-            </VerticalStackLayout>
+        <!-- Map fills the whole page -->
+        <mapsui:MapView
+            x:Name="MainMap"
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            MapClicked="OnMapClicked" />
 
-            <!-- Place Pin Tab -->
-            <VerticalStackLayout Grid.Column="1" Spacing="2">
-                <ImageButton Source="{StaticResource IconAdd}" 
-                             BackgroundColor="Transparent"
-                             Clicked="OnPlacePinTabClicked"
-                             HorizontalOptions="Center" />
-                <Label Text="Place Pin" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
-            </VerticalStackLayout>
+        <!-- Place-pin mode banner (hidden by default) -->
+        <Border
+            x:Name="PlacingPinBanner"
+            Grid.Row="0"
+            BackgroundColor="#CC000000"
+            IsVisible="False"
+            VerticalOptions="Start"
+            Margin="16,52,16,0"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="0"
+            Padding="12,8">
+            <Label
+                Text="📍 Tap anywhere on the map to place the pin"
+                TextColor="White"
+                FontSize="14"
+                HorizontalOptions="Center" />
+        </Border>
 
-            <!-- Events Tab -->
-            <VerticalStackLayout Grid.Column="2" Spacing="2">
-                <ImageButton Source="{StaticResource IconProjects}" 
-                             BackgroundColor="Transparent"
-                             Clicked="OnEventsTabClicked"
-                             HorizontalOptions="Center" />
-                <Label Text="Events" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
-            </VerticalStackLayout>
+        <!-- Bottom tab bar -->
+        <Border
+            Grid.Row="1"
+            BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}"
+            StrokeThickness="0"
+            StrokeShape="RoundRectangle 0"
+            Padding="0,4,0,8">
 
-            <!-- Menu Tab -->
-            <VerticalStackLayout Grid.Column="3" Spacing="2">
-                <ImageButton Source="{StaticResource IconMeta}" 
-                             BackgroundColor="Transparent"
-                             Clicked="OnMenuTabClicked"
-                             HorizontalOptions="Center" />
-                <Label Text="Menu" Style="{StaticResource Caption2}" HorizontalOptions="Center" />
-            </VerticalStackLayout>
-        </Grid>
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,-2" Radius="8" Opacity="0.12" />
+            </Border.Shadow>
+
+            <Grid ColumnDefinitions="*,*,*,*">
+
+                <!-- Map tab -->
+                <VerticalStackLayout
+                    Grid.Column="0"
+                    Spacing="2"
+                    HorizontalOptions="Center">
+                    <Button
+                        Text="🗺"
+                        FontSize="22"
+                        BackgroundColor="Transparent"
+                        Clicked="OnMapTabClicked"
+                        HeightRequest="36"
+                        WidthRequest="48" />
+                    <Label
+                        Text="Map"
+                        FontSize="11"
+                        HorizontalOptions="Center"
+                        TextColor="#FF3300" />
+                </VerticalStackLayout>
+
+                <!-- Place Pin tab -->
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    Spacing="2"
+                    HorizontalOptions="Center">
+                    <Button
+                        Text="📍"
+                        FontSize="22"
+                        BackgroundColor="Transparent"
+                        Clicked="OnPlacePinTabClicked"
+                        HeightRequest="36"
+                        WidthRequest="48" />
+                    <Label
+                        Text="Report"
+                        FontSize="11"
+                        HorizontalOptions="Center"
+                        TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" />
+                </VerticalStackLayout>
+
+                <!-- Events tab -->
+                <VerticalStackLayout
+                    Grid.Column="2"
+                    Spacing="2"
+                    HorizontalOptions="Center">
+                    <Button
+                        Text="🧹"
+                        FontSize="22"
+                        BackgroundColor="Transparent"
+                        Clicked="OnEventsTabClicked"
+                        HeightRequest="36"
+                        WidthRequest="48" />
+                    <Label
+                        Text="Cleanwalks"
+                        FontSize="11"
+                        HorizontalOptions="Center"
+                        TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" />
+                </VerticalStackLayout>
+
+                <!-- Menu tab -->
+                <VerticalStackLayout
+                    Grid.Column="3"
+                    Spacing="2"
+                    HorizontalOptions="Center">
+                    <Button
+                        Text="☰"
+                        FontSize="22"
+                        BackgroundColor="Transparent"
+                        Clicked="OnMenuTabClicked"
+                        HeightRequest="36"
+                        WidthRequest="48" />
+                    <Label
+                        Text="Menu"
+                        FontSize="11"
+                        HorizontalOptions="Center"
+                        TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" />
+                </VerticalStackLayout>
+
+            </Grid>
+        </Border>
+
     </Grid>
 </ContentPage>

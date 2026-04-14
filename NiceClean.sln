@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.4.11626.88 stable
+VisualStudioVersion = 18.4.11626.88
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}"
 EndProject
@@ -9,6 +9,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceCleanLib", "backend\dotnet\NiceCleanLib\NiceCleanLib.csproj", "{5221038A-AFE0-1FF8-519A-07B3D1E79D5D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceCleanREST", "backend\dotnet\NiceCleanREST\NiceCleanREST.csproj", "{ED8FD480-D783-478C-874C-4EAFBA79DD4E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "frontend", "frontend", "{3C342990-3B27-4E37-94F8-93454EB1D02C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "mobile", "mobile", "{EEED57A7-C3E8-431C-8F73-3B90FE26E8C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceCleanApp", "frontend\mobile\NiceCleanApp\NiceCleanApp.csproj", "{77990118-1D8F-207B-A39F-B00FF46D1204}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +30,11 @@ Global
 		{ED8FD480-D783-478C-874C-4EAFBA79DD4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED8FD480-D783-478C-874C-4EAFBA79DD4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED8FD480-D783-478C-874C-4EAFBA79DD4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77990118-1D8F-207B-A39F-B00FF46D1204}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77990118-1D8F-207B-A39F-B00FF46D1204}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77990118-1D8F-207B-A39F-B00FF46D1204}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{77990118-1D8F-207B-A39F-B00FF46D1204}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77990118-1D8F-207B-A39F-B00FF46D1204}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -32,6 +43,8 @@ Global
 		{E88F20B6-B27F-3B19-BD54-AA1B9D317BA4} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 		{5221038A-AFE0-1FF8-519A-07B3D1E79D5D} = {E88F20B6-B27F-3B19-BD54-AA1B9D317BA4}
 		{ED8FD480-D783-478C-874C-4EAFBA79DD4E} = {E88F20B6-B27F-3B19-BD54-AA1B9D317BA4}
+		{EEED57A7-C3E8-431C-8F73-3B90FE26E8C4} = {3C342990-3B27-4E37-94F8-93454EB1D02C}
+		{77990118-1D8F-207B-A39F-B00FF46D1204} = {EEED57A7-C3E8-431C-8F73-3B90FE26E8C4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBAF7A1B-C7E0-46A0-BCC0-21941146F9FF}
