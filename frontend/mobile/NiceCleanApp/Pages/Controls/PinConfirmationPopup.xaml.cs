@@ -71,9 +71,6 @@ public partial class PinConfirmationPopup : Popup
         SeverityValueLabel.Text = severityName;
     }
 
-    private void OnArrowTapped(object sender, TappedEventArgs e)
-       => TypePicker.Focus();
-
     private void OnConfirmClicked(object? sender, EventArgs e)
     {
         // Extract severity number from the selected string (e.g., "3 – High" → 3)

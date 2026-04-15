@@ -153,10 +153,16 @@ public partial class MapPage : ContentPage
         var result = await popup.Result;
 
         if (result != null)
+        {
             await CreatePollutionPinAsync(result);
+            OnMapTabClicked(sender, e);
+        }
         else
+        {
             _pendingPinLocation = null;
-        OnMapTabClicked(sender, e);
+            _isPlacingPin = true;
+            PlacingPinBanner.IsVisible = true;
+        }
     }
 
     // ──────────────────────────────────────────────
