@@ -24,11 +24,18 @@ public partial class MapPage : ContentPage
 {
     private readonly IClient _apiClient;
 
+    // Manage tabs
+    private enum Tab { Map, PlacePin, Events, Menu }
+    private Tab _selectedTab = Tab.Map;
+
     // Single shared layer — all pins live here
     private readonly GenericCollectionLayer<List<IFeature>> _pinLayer = new();
 
     private bool _isPlacingPin;
     private MPoint? _pendingPinLocation;
+
+    // Drawer width must match WidthRequest in XAML
+    private const double DrawerWidth = 280;
 
     // TODO: Replace with real user from auth session
     private const int CurrentUserId = 1;
@@ -38,6 +45,8 @@ public partial class MapPage : ContentPage
         InitializeComponent();
         _apiClient = apiClient;
         InitializeMap();
+
+        SetSelectedTab(Tab.Map);
     }
 
     // ──────────────────────────────────────────────
@@ -74,6 +83,7 @@ public partial class MapPage : ContentPage
         base.OnAppearing();
         await RequestLocationPermissionAsync();
         await LoadExistingPinsAsync();
+        UpdateThemeHighlight();
     }
 
     private static async Task RequestLocationPermissionAsync()
@@ -111,8 +121,17 @@ public partial class MapPage : ContentPage
 
     private void OnPlacePinTabClicked(object? sender, EventArgs e)
     {
-        _isPlacingPin = true;
-        PlacingPinBanner.IsVisible = true;
+        if (_isPlacingPin == false)
+        {
+            SetSelectedTab(Tab.PlacePin);
+            _isPlacingPin = true;
+            PlacingPinBanner.IsVisible = true;
+        }
+        else
+        {
+            OnMapTabClicked(sender, e);
+        }
+            
     }
 
     private void OnMapClicked(object? sender, MapClickedEventArgs e)
@@ -122,10 +141,10 @@ public partial class MapPage : ContentPage
         _isPlacingPin = false;
         PlacingPinBanner.IsVisible = false;
 
-        ShowPinConfirmationPopup();
+        ShowPinConfirmationPopup(sender, e);
     }
 
-    private async void ShowPinConfirmationPopup()
+    private async void ShowPinConfirmationPopup(object? sender, MapClickedEventArgs e)
     {
         if (_pendingPinLocation == null) return;
 
@@ -137,6 +156,7 @@ public partial class MapPage : ContentPage
             await CreatePollutionPinAsync(result);
         else
             _pendingPinLocation = null;
+        OnMapTabClicked(sender, e);
     }
 
     // ──────────────────────────────────────────────
@@ -149,7 +169,7 @@ public partial class MapPage : ContentPage
 
         var (lon, lat) = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y);
 
-        var dto = new PinCreateDto // TODO: Map PinConfirmationResult to PinCreateDTO from API layer
+        var dto = new PinCreateDto
         {
             UserId = CurrentUserId,
             Severity = result.Severity,
@@ -209,17 +229,133 @@ public partial class MapPage : ContentPage
     /// </summary>
     private static Mapsui.Styles.Color GetPinMapsuiColor(PinStatus status) => status switch
     {
-        PinStatus.Verified => new Mapsui.Styles.Color(255, 51, 0),   // #FF3300
-        PinStatus.Cleaned => new Mapsui.Styles.Color(0, 170, 68),  // #00AA44
-        PinStatus.Deleted => new Mapsui.Styles.Color(136, 136, 136), // #888888
-        _ => new Mapsui.Styles.Color(255, 153, 0)    // #FF9900 Unverified
+        PinStatus.Verified => new Mapsui.Styles.Color(255, 51, 0),    // #FF3300
+        PinStatus.Cleaned  => new Mapsui.Styles.Color(0, 170, 68),    // #00AA44
+        PinStatus.Deleted  => new Mapsui.Styles.Color(136, 136, 136), // #888888
+        _                  => new Mapsui.Styles.Color(255, 153, 0)    // #FF9900 Unverified
     };
 
     // ──────────────────────────────────────────────
     // Bottom tab bar handlers
     // ──────────────────────────────────────────────
 
-    private void OnMapTabClicked(object? sender, EventArgs e) { /* already on map */ }
-    private void OnEventsTabClicked(object? sender, EventArgs e) { /* TODO: navigate to cleanwalks */ }
-    private void OnMenuTabClicked(object? sender, EventArgs e) => Shell.Current.FlyoutIsPresented = true;
+    private void OnMapTabClicked(object? sender, EventArgs e)
+    {
+        _isPlacingPin = false;
+        PlacingPinBanner.IsVisible = false;
+        SetSelectedTab(Tab.Map);
+    }
+    private void OnEventsTabClicked(object? sender, EventArgs e)
+    {
+        SetSelectedTab(Tab.Events);
+        /* TODO: navigate to cleanwalks */
+    }
+
+    private async void OnMenuTabClicked(object? sender, EventArgs e)
+    {
+        SetSelectedTab(Tab.Menu);
+        UpdateThemeHighlight();
+
+        // Position the panel fully off-screen to the right before making it visible
+        MenuPanel.TranslationX = DrawerWidth;
+        MenuOverlay.IsVisible = true;
+
+        // Slide in from right → left (TranslationX: DrawerWidth → 0)
+        await MenuPanel.TranslateTo(0, 0, 260, Easing.CubicOut);
+    }
+
+    private void SetSelectedTab(Tab selected)
+    {
+        _selectedTab = selected;
+
+        // Helper to style a button
+        void StyleButton(Button btn, bool isSelected)
+        {
+            if (isSelected)
+            {
+                btn.BackgroundColor = Microsoft.Maui.Graphics.Color.FromArgb("#FF3300");
+                btn.TextColor = Colors.White;
+            }
+            else
+            {
+                btn.BackgroundColor = Colors.Transparent;
+                // Restore theme-aware text color
+                btn.SetAppThemeColor(Button.TextColorProperty,
+                    light: Microsoft.Maui.Graphics.Color.FromArgb("#333333"),
+                    dark: Microsoft.Maui.Graphics.Color.FromArgb("#EEEEEE"));
+            }
+        }
+
+        // Find buttons by name (give them x:Name in XAML first!)
+        StyleButton(MapTabButton, _selectedTab == Tab.Map);
+        StyleButton(PlacePinTabButton, _selectedTab == Tab.PlacePin);
+        StyleButton(EventsTabButton, _selectedTab == Tab.Events);
+        StyleButton(MenuTabButton, _selectedTab == Tab.Menu);
+    }
+
+    // ──────────────────────────────────────────────
+    // Right-side drawer
+    // ──────────────────────────────────────────────
+    private async void OnMenuBackdropTapped(object? sender, TappedEventArgs e)
+    {
+        await CloseMenuAsync();
+        OnMapTabClicked(sender, e);
+    }
+
+    private async void OnMenuCloseClicked(object? sender, EventArgs e)
+    {
+        await CloseMenuAsync();
+        OnMapTabClicked(sender, e);
+    }
+
+    private async Task CloseMenuAsync()
+    {
+        // Slide out right (TranslationX: 0 → DrawerWidth)
+        await MenuPanel.TranslateTo(DrawerWidth, 0, 200, Easing.CubicIn);
+        MenuOverlay.IsVisible = false;
+    }
+
+    // ──────────────────────────────────────────────
+    // Theme toggle (inside drawer)
+    // ──────────────────────────────────────────────
+
+    private void OnLightThemeTapped(object? sender, TappedEventArgs e)
+    {
+        Application.Current!.UserAppTheme = AppTheme.Light;
+        UpdateThemeHighlight();
+    }
+
+    private void OnDarkThemeTapped(object? sender, TappedEventArgs e)
+    {
+        Application.Current!.UserAppTheme = AppTheme.Dark;
+        UpdateThemeHighlight();
+    }
+
+    /// <summary>
+    /// Highlights the active theme card (orange bg + white text)
+    /// and resets the inactive one (subtle bg + themed text).
+    /// </summary>
+    private void UpdateThemeHighlight()
+    {
+        // Determine current effective theme
+        var userTheme = Application.Current?.UserAppTheme;
+        bool isLight = userTheme == AppTheme.Light
+            || (userTheme != AppTheme.Dark && Application.Current?.RequestedTheme == AppTheme.Light);
+
+        // Active card: brand orange background, white text
+        // Inactive card: subtle tinted background, default text
+        var activeColor   = Microsoft.Maui.Graphics.Color.FromArgb("#FF3300");
+        var inactiveLightColor = Microsoft.Maui.Graphics.Color.FromArgb("#F5F5F5");
+        var inactiveDarkColor  = Microsoft.Maui.Graphics.Color.FromArgb("#2C2C2C");
+        bool isDarkMode = Application.Current?.RequestedTheme == AppTheme.Dark
+                       || Application.Current?.UserAppTheme == AppTheme.Dark;
+
+        var inactiveColor = isDarkMode ? inactiveDarkColor : inactiveLightColor;
+        var inactiveText  = isDarkMode ? Colors.White : Microsoft.Maui.Graphics.Color.FromArgb("#333333");
+        var activeText    = Colors.White;
+
+        LightThemeCard.BackgroundColor  = isLight ? activeColor   : inactiveColor;
+
+        DarkThemeCard.BackgroundColor   = isLight ? inactiveColor : activeColor;
+    }
 }

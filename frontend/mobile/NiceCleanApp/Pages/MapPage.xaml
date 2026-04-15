@@ -49,83 +49,201 @@
             <Grid ColumnDefinitions="*,*,*,*">
 
                 <!-- Map tab -->
-                <VerticalStackLayout
-                    Grid.Column="0"
-                    Spacing="2"
-                    HorizontalOptions="Center">
+                <VerticalStackLayout Grid.Column="0" Spacing="2" HorizontalOptions="Center">
                     <Button
+                        x:Name="MapTabButton"
                         Text="🗺"
                         FontSize="22"
                         BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
+                        BorderWidth="0"
                         Clicked="OnMapTabClicked"
-                        HeightRequest="36"
-                        WidthRequest="48" />
-                    <Label
-                        Text="Map"
-                        FontSize="11"
-                        HorizontalOptions="Center"
-                        TextColor="#FF3300" />
+                        HeightRequest="50"
+                        WidthRequest="60" />
                 </VerticalStackLayout>
 
                 <!-- Place Pin tab -->
-                <VerticalStackLayout
-                    Grid.Column="1"
-                    Spacing="2"
-                    HorizontalOptions="Center">
+                <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
                     <Button
+                        x:Name="PlacePinTabButton"
                         Text="📍"
                         FontSize="22"
                         BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
+                        BorderWidth="0"
                         Clicked="OnPlacePinTabClicked"
-                        HeightRequest="36"
-                        WidthRequest="48" />
-                    <Label
-                        Text="Report"
-                        FontSize="11"
-                        HorizontalOptions="Center"
-                        TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" />
+                        HeightRequest="50"
+                        WidthRequest="60" />
                 </VerticalStackLayout>
 
                 <!-- Events tab -->
-                <VerticalStackLayout
-                    Grid.Column="2"
-                    Spacing="2"
-                    HorizontalOptions="Center">
+                <VerticalStackLayout Grid.Column="2" Spacing="2" HorizontalOptions="Center">
                     <Button
-                        Text="🧹"
+                        x:Name="EventsTabButton"
+                        Text="👥"
                         FontSize="22"
                         BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
+                        BorderWidth="0"
                         Clicked="OnEventsTabClicked"
-                        HeightRequest="36"
-                        WidthRequest="48" />
-                    <Label
-                        Text="Cleanwalks"
-                        FontSize="11"
-                        HorizontalOptions="Center"
-                        TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" />
+                        HeightRequest="50"
+                        WidthRequest="60" />
                 </VerticalStackLayout>
 
                 <!-- Menu tab -->
-                <VerticalStackLayout
-                    Grid.Column="3"
-                    Spacing="2"
-                    HorizontalOptions="Center">
+                <VerticalStackLayout Grid.Column="3" Spacing="2" HorizontalOptions="Center">
                     <Button
+                        x:Name="MenuTabButton"
                         Text="☰"
                         FontSize="22"
                         BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
+                        BorderWidth="0"
                         Clicked="OnMenuTabClicked"
                         HeightRequest="36"
                         WidthRequest="48" />
-                    <Label
-                        Text="Menu"
-                        FontSize="11"
-                        HorizontalOptions="Center"
-                        TextColor="{AppThemeBinding Light=#666, Dark=#AAA}" />
                 </VerticalStackLayout>
 
             </Grid>
         </Border>
 
+        <!-- ══════════════════════════════════════════
+             RIGHT-SIDE DRAWER (on top of everything)
+             ══════════════════════════════════════════ -->
+        <Grid
+            x:Name="MenuOverlay"
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            IsVisible="False">
+
+            <!-- Dim backdrop — tap to close -->
+            <BoxView BackgroundColor="#66000000">
+                <BoxView.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnMenuBackdropTapped" />
+                </BoxView.GestureRecognizers>
+            </BoxView>
+
+            <!-- Sliding panel anchored to the right edge -->
+            <Border
+                x:Name="MenuPanel"
+                HorizontalOptions="End"
+                WidthRequest="280"
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 0">
+
+                <Grid RowDefinitions="Auto,*">
+
+                    <!-- Drawer header -->
+                    <Border
+                        Grid.Row="0"
+                        BackgroundColor="#FF3300"
+                        Padding="10,8,8,8"
+                        StrokeThickness="0">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label
+                                Grid.Column="0"
+                                Text="Menu"
+                                TextColor="White"
+                                FontSize="22"
+                                FontAttributes="Bold"
+                                VerticalOptions="Center" />
+                            <!-- Close button -->
+                            <Button
+                                Grid.Column="1"
+                                Text="✕"
+                                FontSize="18"
+                                TextColor="White"
+                                BackgroundColor="Transparent"
+                                BorderWidth="0"
+                                HeightRequest="36"
+                                WidthRequest="36"
+                                Clicked="OnMenuCloseClicked" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Drawer body -->
+                    <Grid Grid.Row="1" RowDefinitions="*,Auto">
+
+                        <VerticalStackLayout
+                            Grid.Row="0"
+                            Padding="20"
+                            Spacing="24">
+
+                            <!-- Placeholder menu items for future use -->
+                            <VerticalStackLayout Spacing="4">
+                                <Label
+                                    Text="ACCOUNT"
+                                    FontSize="11"
+                                    FontAttributes="Bold"
+                                    CharacterSpacing="1"
+                                    TextColor="{AppThemeBinding Light=#999999, Dark=#777777}" />
+                                <Label
+                                    Text="Coming soon…"
+                                    FontSize="14"
+                                    TextColor="{AppThemeBinding Light=#CCCCCC, Dark=#444444}"
+                                    Margin="0,6,0,0" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout
+                             Grid.Row="1"
+                             Padding="20"
+                             Spacing="12">
+
+                            <!-- Divider -->
+                            <BoxView
+                                 HeightRequest="1"
+                                 BackgroundColor="{AppThemeBinding Light=#EEEEEE, Dark=#333333}" />
+
+                            <!-- Theme section -->
+                            <VerticalStackLayout Spacing="12">
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+
+                                    <!-- Light theme button -->
+                                    <Border
+                                         x:Name="LightThemeCard"
+                                         Grid.Column="0"
+                                         Padding="0,12"
+                                         StrokeShape="RoundRectangle 10"
+                                         StrokeThickness="0">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnLightThemeTapped" />
+                                        </Border.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                                            <Label
+                                                 x:Name="LightThemeIcon"
+                                                 Text="☀️"
+                                                 FontSize="24"
+                                                 HorizontalOptions="Center" />
+                                        </VerticalStackLayout>
+                                    </Border>
+
+                                    <!-- Dark theme button -->
+                                    <Border
+                                         x:Name="DarkThemeCard"
+                                         Grid.Column="1"
+                                         Padding="0,12"
+                                         StrokeShape="RoundRectangle 10"
+                                         StrokeThickness="0">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnDarkThemeTapped" />
+                                        </Border.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                                            <Label
+                                                 x:Name="DarkThemeIcon"
+                                                 Text="🌙"
+                                                 FontSize="24"
+                                                 HorizontalOptions="Center" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </Grid>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </ContentPage>
