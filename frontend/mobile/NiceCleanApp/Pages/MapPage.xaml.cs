@@ -247,12 +247,16 @@ public partial class MapPage : ContentPage
     }
     private void OnEventsTabClicked(object? sender, EventArgs e)
     {
+        _isPlacingPin = false;
+        PlacingPinBanner.IsVisible = false;
         SetSelectedTab(Tab.Events);
         /* TODO: navigate to cleanwalks */
     }
 
     private async void OnMenuTabClicked(object? sender, EventArgs e)
     {
+        _isPlacingPin = false;
+        PlacingPinBanner.IsVisible = false;
         SetSelectedTab(Tab.Menu);
         UpdateThemeHighlight();
 

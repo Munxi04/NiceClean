@@ -26,15 +26,9 @@ public partial class PinConfirmationPopup : Popup
         _address = LocationLabel.Text;
 
         // Populate severity picker
-        SeverityPicker.ItemsSource = new List<string>
-        {
-            "Low",
-            "Moderate",
-            "High",
-            "Very High",
-            "Extreme"
-        };
-        SeverityPicker.SelectedItem = PollutionSeverity.High; // default High
+        // Set initial slider value (default = 3 = "High")
+        SeveritySlider.Value = 3;
+        UpdateSeverityLabel(3);
 
         // Populate type picker
         TypePicker.ItemsSource = new List<string>
@@ -48,10 +42,42 @@ public partial class PinConfirmationPopup : Popup
         _ = FetchAddressAsync(); // Start fetching the address in the background
     }
 
+    private void OnSeveritySliderValueChanged(object sender, ValueChangedEventArgs e)
+    {
+        // Snap to nearest integer between 1 and 5
+        int snappedValue = (int)Math.Round(e.NewValue);
+        snappedValue = Math.Clamp(snappedValue, 1, 5);
+
+        // Prevent infinite loop: only update if the slider value is not already snapped
+        if (Math.Abs(SeveritySlider.Value - snappedValue) > 0.01)
+        {
+            SeveritySlider.Value = snappedValue;
+        }
+        UpdateSeverityLabel(snappedValue);
+    }
+
+    private void UpdateSeverityLabel(int value)
+    {
+        int severityIndex = value;
+        string severityName = severityIndex switch
+        {
+            1 => "Low",
+            2 => "Moderate",
+            3 => "High",
+            4 => "Very High",
+            5 => "Extreme",
+            _ => "Unknown"
+        };
+        SeverityValueLabel.Text = severityName;
+    }
+
+    private void OnArrowTapped(object sender, TappedEventArgs e)
+       => TypePicker.Focus();
+
     private void OnConfirmClicked(object? sender, EventArgs e)
     {
         // Extract severity number from the selected string (e.g., "3 – High" → 3)
-        PollutionSeverity severity = (PollutionSeverity)(SeverityPicker.SelectedIndex + 1);
+        PollutionSeverity severity = (PollutionSeverity)(int)Math.Round(SeveritySlider.Value);
         // Get the selected type string
         PollutionType type = (PollutionType)TypePicker.SelectedIndex;
 

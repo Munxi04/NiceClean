@@ -205,7 +205,7 @@
                                     <Border
                                          x:Name="LightThemeCard"
                                          Grid.Column="0"
-                                         Padding="0,12"
+                                         Padding="0,8"
                                          StrokeShape="RoundRectangle 10"
                                          StrokeThickness="0">
                                         <Border.GestureRecognizers>
@@ -215,7 +215,7 @@
                                             <Label
                                                  x:Name="LightThemeIcon"
                                                  Text="☀️"
-                                                 FontSize="24"
+                                                 FontSize="20"
                                                  HorizontalOptions="Center" />
                                         </VerticalStackLayout>
                                     </Border>
@@ -224,7 +224,7 @@
                                     <Border
                                          x:Name="DarkThemeCard"
                                          Grid.Column="1"
-                                         Padding="0,12"
+                                         Padding="0,8"
                                          StrokeShape="RoundRectangle 10"
                                          StrokeThickness="0">
                                         <Border.GestureRecognizers>
@@ -234,7 +234,7 @@
                                             <Label
                                                  x:Name="DarkThemeIcon"
                                                  Text="🌙"
-                                                 FontSize="24"
+                                                 FontSize="20"
                                                  HorizontalOptions="Center" />
                                         </VerticalStackLayout>
                                     </Border>
