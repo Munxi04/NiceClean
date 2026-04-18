@@ -100,8 +100,8 @@
                         TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
                         BorderWidth="0"
                         Clicked="OnMenuTabClicked"
-                        HeightRequest="36"
-                        WidthRequest="48" />
+                        HeightRequest="50"
+                        WidthRequest="60" />
                 </VerticalStackLayout>
 
             </Grid>

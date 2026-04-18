@@ -86,7 +86,7 @@
                     FontSize="12"
                     TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}"
                     BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2C}"
-                    TitleColor="#888888" />
+                    TitleColor="#888888"/>
             </VerticalStackLayout>
 
             <!-- Buttons -->
@@ -100,9 +100,10 @@
                     CornerRadius="10"
                     HeightRequest="48" />
                 <Button
+                    x:Name="ReportButton"
                     Grid.Column="1"
                     Text="Report"
-                    Clicked="OnConfirmClicked"
+                    Clicked="OnReportClicked"
                     BackgroundColor="#FF3300"
                     TextColor="White"
                     CornerRadius="10"

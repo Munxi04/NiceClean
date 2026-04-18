@@ -37,8 +37,8 @@ public partial class PinConfirmationPopup : Popup
             "Glass",
             "Furniture"
         };
-        TypePicker.SelectedItem = PollutionType.Plastic; // default: Plastic
-
+        TypePicker.SelectedIndex = -1; // default: no selection
+        
         _ = FetchAddressAsync(); // Start fetching the address in the background
     }
 
@@ -71,10 +71,20 @@ public partial class PinConfirmationPopup : Popup
         SeverityValueLabel.Text = severityName;
     }
 
-    private void OnConfirmClicked(object? sender, EventArgs e)
+    private async void OnReportClicked(object? sender, EventArgs e)
     {
+        // Validate that a pollution type has been selected
+        if (TypePicker.SelectedIndex == -1)
+        {
+            await Shell.Current.CurrentPage.DisplayAlertAsync(
+                "Missing information",
+                "Please select a pollution type before confirming.",
+                "OK");
+            return;
+        }
+
         // Extract severity number from the selected string (e.g., "3 – High" → 3)
-        PollutionSeverity severity = (PollutionSeverity)(int)Math.Round(SeveritySlider.Value);
+        PollutionSeverity severity = (PollutionSeverity)((int)Math.Round(SeveritySlider.Value) - 1);
         // Get the selected type string
         PollutionType type = (PollutionType)TypePicker.SelectedIndex;
 
@@ -94,7 +104,6 @@ public partial class PinConfirmationPopup : Popup
 
     private void OnCancelClicked(object? sender, EventArgs e)
     {
-        _tcs.SetResult(null);
         _ = CloseAsync(); // Close without returning a result
     }
 

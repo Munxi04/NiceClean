@@ -1,4 +1,50 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="456" height="456" fill="#512BD4" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Fondo blanco sólido -->
+  <rect width="512" height="512" rx="115" fill="#FFFFFF" />
+
+  <!-- Brillo solar (centrado y contenido) -->
+  <circle cx="256" cy="256" r="140" fill="#FFC300" opacity="0.25" />
+
+  <!-- Pin rojo (escalado y centrado, con margen superior) -->
+  <g transform="translate(0, 20)">
+    <path d="M 256 370 
+             C 242 370, 215 340, 196 305 
+             C 176 265, 158 220, 158 175 
+             A 98 98 0 1 1 354 175 
+             C 354 220, 336 265, 316 305 
+             C 296 340, 270 370, 256 370 Z" 
+          fill="#FF3300" />
+
+    <!-- Brillo interior del pin -->
+    <path d="M 256 365 
+             C 244 365, 218 335, 200 302 
+             C 182 264, 164 220, 164 175 
+             A 92 92 0 1 1 348 175 
+             C 348 220, 330 264, 312 302 
+             C 294 335, 268 365, 256 365 Z" 
+          fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="6" stroke-linejoin="round" />
+  </g>
+
+  <!-- Hoja verde (escalada y reposicionada) -->
+  <g transform="rotate(-40 256 220) translate(0, 10)">
+    <!-- Forma de la hoja -->
+    <path d="M 256 140 
+             C 216 175, 206 220, 256 265 
+             C 306 220, 296 175, 256 140 Z" 
+          fill="#00AA44" />
+    
+    <!-- Tallo -->
+    <path d="M 256 265 Q 260 285 268 300" 
+          fill="none" stroke="#00662A" stroke-width="8" stroke-linecap="round" />
+
+    <!-- Vena central -->
+    <path d="M 256 150 C 256 185, 256 225, 256 255" 
+          fill="none" stroke="#004D1A" stroke-width="5" stroke-linecap="round" />
+
+    <!-- Venas laterales -->
+    <path d="M 256 185 C 242 195, 228 200, 218 210" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
+    <path d="M 256 195 C 270 205, 285 210, 295 220" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
+    <path d="M 256 225 C 242 235, 232 240, 222 248" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
+    <path d="M 256 235 C 270 245, 280 250, 290 258" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
+  </g>
 </svg>

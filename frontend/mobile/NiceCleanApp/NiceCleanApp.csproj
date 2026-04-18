@@ -29,7 +29,7 @@
 		<MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
 
 		<!-- Display name -->
-		<ApplicationTitle>NiceCleanApp</ApplicationTitle>
+		<ApplicationTitle>NiceClean</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.nicecleanapp</ApplicationId>
@@ -51,7 +51,7 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#17171a" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" Color="Transparent" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#17171a" BaseSize="128,128" />
@@ -63,6 +63,10 @@
 
 		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <AndroidResource Remove="Platforms\Android\Resources\values\styles.xml" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -86,7 +90,6 @@
 	</ItemGroup>
 
 	<!-- NSwag code generation-->
-	
 	<!-- Download swagger.json from Azure -->
 	<Target Name="DownloadSwaggerJson" BeforeTargets="BeforeBuild" Condition="!Exists('$(ProjectDir)OpenAPIs\swagger.json')">
 		<DownloadFile SourceUrl="https://nicecleanrest.azurewebsites.net/swagger/v1/swagger.json" DestinationFolder="$(ProjectDir)OpenAPIs" DestinationFileName="swagger.json" Retries="3" ContinueOnError="false" />

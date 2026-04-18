@@ -1,4 +1,3 @@
-using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Extensions;
 using Mapsui;
 using Mapsui.Extensions;
@@ -45,8 +44,6 @@ public partial class MapPage : ContentPage
         InitializeComponent();
         _apiClient = apiClient;
         InitializeMap();
-
-        SetSelectedTab(Tab.Map);
     }
 
     // ──────────────────────────────────────────────
@@ -84,6 +81,7 @@ public partial class MapPage : ContentPage
         await RequestLocationPermissionAsync();
         await LoadExistingPinsAsync();
         UpdateThemeHighlight();
+        SetSelectedTab(Tab.Map);
     }
 
     private static async Task RequestLocationPermissionAsync()
@@ -96,7 +94,6 @@ public partial class MapPage : ContentPage
     // ──────────────────────────────────────────────
     // Load existing pins from API
     // ──────────────────────────────────────────────
-
     private async Task LoadExistingPinsAsync()
     {
         try
@@ -113,6 +110,31 @@ public partial class MapPage : ContentPage
         {
             await AppShell.DisplaySnackbarAsync($"Could not load pins: {ex.Message}");
         }
+    }
+
+    // ──────────────────────────────────────────────
+    // Hit-testing: find a pin near the clicked point (within 20 screen pixels)
+    // ──────────────────────────────────────────────
+
+    private Pin? FindPinAtPoint(MPoint worldPoint)
+    {
+        // Convert 20 screen pixels → world units using current zoom level
+        double tolerance = MainMap.Map.Navigator.Viewport.Resolution * 20;
+
+        foreach (var feature in _pinLayer.Features)
+        {
+            if (feature is GeometryFeature gf
+                && gf.Geometry is NetTopologySuite.Geometries.Point pt
+                && feature["Pin"] is Pin pin)
+            {
+                double dx = pt.X - worldPoint.X;
+                double dy = pt.Y - worldPoint.Y;
+                if (Math.Sqrt(dx * dx + dy * dy) < tolerance)
+                    return pin;
+            }
+        }
+
+        return null;
     }
 
     // ──────────────────────────────────────────────
@@ -136,12 +158,25 @@ public partial class MapPage : ContentPage
 
     private void OnMapClicked(object? sender, MapClickedEventArgs e)
     {
-        if (!_isPlacingPin) return;
-        _pendingPinLocation = e.Point.ToMapsui();
-        _isPlacingPin = false;
-        PlacingPinBanner.IsVisible = false;
+        var clickPoint = e.Point.ToMapsui();
 
-        ShowPinConfirmationPopup(sender, e);
+        // If we're in "placing pin" mode, the click sets the pending pin location and shows the confirmation popup
+        if (_isPlacingPin)
+        {
+            _pendingPinLocation = clickPoint;
+            _isPlacingPin = false;
+            PlacingPinBanner.IsVisible = false;
+            ShowPinConfirmationPopup(sender, e);
+            return;
+        }
+
+        // Otherwise, check if the click hit an existing pin and show its info popup
+        var hit = FindPinAtPoint(clickPoint);
+        if (hit != null)
+        {
+            var popup = new PinInfoPopup(hit);
+            this.ShowPopup(popup);
+        }
     }
 
     private async void ShowPinConfirmationPopup(object? sender, MapClickedEventArgs e)
@@ -213,7 +248,8 @@ public partial class MapPage : ContentPage
         var feature = new GeometryFeature
         {
             Geometry = new NetTopologySuite.Geometries.Point(point),
-            ["Label"] = $"{pin.PollutionType} – {pin.Severity}"
+            ["Label"] = $"{pin.PollutionType} – {pin.Severity}",
+            ["Pin"] = pin
         };
 
         feature.Styles.Add(new SymbolStyle
@@ -244,7 +280,6 @@ public partial class MapPage : ContentPage
     // ──────────────────────────────────────────────
     // Bottom tab bar handlers
     // ──────────────────────────────────────────────
-
     private void OnMapTabClicked(object? sender, EventArgs e)
     {
         _isPlacingPin = false;
@@ -258,7 +293,6 @@ public partial class MapPage : ContentPage
         SetSelectedTab(Tab.Events);
         /* TODO: navigate to cleanwalks */
     }
-
     private async void OnMenuTabClicked(object? sender, EventArgs e)
     {
         _isPlacingPin = false;
@@ -271,9 +305,8 @@ public partial class MapPage : ContentPage
         MenuOverlay.IsVisible = true;
 
         // Slide in from right → left (TranslationX: DrawerWidth → 0)
-        await MenuPanel.TranslateTo(0, 0, 260, Easing.CubicOut);
+        await MenuPanel.TranslateToAsync(0, 0, 260, Easing.CubicOut);
     }
-
     private void SetSelectedTab(Tab selected)
     {
         _selectedTab = selected;
@@ -311,7 +344,6 @@ public partial class MapPage : ContentPage
         await CloseMenuAsync();
         OnMapTabClicked(sender, e);
     }
-
     private async void OnMenuCloseClicked(object? sender, EventArgs e)
     {
         await CloseMenuAsync();
@@ -321,7 +353,7 @@ public partial class MapPage : ContentPage
     private async Task CloseMenuAsync()
     {
         // Slide out right (TranslationX: 0 → DrawerWidth)
-        await MenuPanel.TranslateTo(DrawerWidth, 0, 200, Easing.CubicIn);
+        await MenuPanel.TranslateToAsync(DrawerWidth, 0, 200, Easing.CubicIn);
         MenuOverlay.IsVisible = false;
     }
 
@@ -334,7 +366,6 @@ public partial class MapPage : ContentPage
         Application.Current!.UserAppTheme = AppTheme.Light;
         UpdateThemeHighlight();
     }
-
     private void OnDarkThemeTapped(object? sender, TappedEventArgs e)
     {
         Application.Current!.UserAppTheme = AppTheme.Dark;
