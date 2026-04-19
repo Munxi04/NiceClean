@@ -19,7 +19,7 @@
             <!-- Header bar -->
             <Grid
                 Padding="20,16"
-                BackgroundColor="#FF3300"
+                BackgroundColor="#3B6D11"
                 ColumnDefinitions="*,Auto">
 
                 <VerticalStackLayout Grid.Column="0" Spacing="2">
@@ -32,7 +32,7 @@
                     <Label
                         x:Name="SubtitleLabel"
                         FontSize="12"
-                        TextColor="#FFCCBB"
+                        TextColor="#C5E49A"
                         MaxLines="2"
                         LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>

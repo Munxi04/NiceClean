@@ -36,13 +36,17 @@ public partial class MapPage : ContentPage
     // Drawer width must match WidthRequest in XAML
     private const double DrawerWidth = 280;
 
-    // TODO: Replace with real user from auth session
-    private const int CurrentUserId = 1;
+    // For API calls that require user info (e.g. creating a pin), we can access the current user session
+    private readonly IUserSession _userSession;
 
-    public MapPage(IClient apiClient)
+    private readonly ICredentialService _credentialService;
+
+    public MapPage(IClient apiClient, IUserSession userSession, ICredentialService credentialService)
     {
         InitializeComponent();
         _apiClient = apiClient;
+        _userSession = userSession;
+        _credentialService = credentialService;
         InitializeMap();
     }
 
@@ -208,11 +212,18 @@ public partial class MapPage : ContentPage
     {
         if (_pendingPinLocation == null) return;
 
-        var (lon, lat) = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y);
+        var currentUserId = _userSession.CurrentUser?.Id ?? 0;
+        if (currentUserId == 0)
+        {
+            await AppShell.DisplaySnackbarAsync("Error: User not logged in.");
+            return;
+        }
+
+            var (lon, lat) = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y);
 
         var dto = new PinCreateDto
         {
-            UserId = CurrentUserId,
+            UserId = currentUserId,
             Severity = result.Severity,
             Radius = 100.0,
             PollutionType = result.Type,
@@ -316,7 +327,7 @@ public partial class MapPage : ContentPage
         {
             if (isSelected)
             {
-                btn.BackgroundColor = Microsoft.Maui.Graphics.Color.FromArgb("#FF3300");
+                btn.BackgroundColor = Microsoft.Maui.Graphics.Color.FromArgb("#3B6D11");
                 btn.TextColor = Colors.White;
             }
             else
@@ -383,9 +394,9 @@ public partial class MapPage : ContentPage
         bool isLight = userTheme == AppTheme.Light
             || (userTheme != AppTheme.Dark && Application.Current?.RequestedTheme == AppTheme.Light);
 
-        // Active card: brand orange background, white text
+        // Active card: brand green background, white text
         // Inactive card: subtle tinted background, default text
-        var activeColor   = Microsoft.Maui.Graphics.Color.FromArgb("#FF3300");
+        var activeColor   = Microsoft.Maui.Graphics.Color.FromArgb("#3B6D11");
         var inactiveLightColor = Microsoft.Maui.Graphics.Color.FromArgb("#F5F5F5");
         var inactiveDarkColor  = Microsoft.Maui.Graphics.Color.FromArgb("#2C2C2C");
         bool isDarkMode = Application.Current?.RequestedTheme == AppTheme.Dark
@@ -398,5 +409,21 @@ public partial class MapPage : ContentPage
         LightThemeCard.BackgroundColor  = isLight ? activeColor   : inactiveColor;
 
         DarkThemeCard.BackgroundColor   = isLight ? inactiveColor : activeColor;
+    }
+
+    // ──────────────────────────────────────────────
+    // Sign out flow
+    // ──────────────────────────────────────────────
+    private async void OnSignOutClicked(object? sender, EventArgs e)
+    {
+        // Clear session and stored credentials
+        _userSession.Clear();
+        _credentialService.ClearCredentials();
+
+        // Close drawer
+        await CloseMenuAsync();
+
+        // Navigate back to login
+        await Shell.Current.GoToAsync("//AuthPage");
     }
 }

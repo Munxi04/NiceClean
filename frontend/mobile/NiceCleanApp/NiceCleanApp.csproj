@@ -89,6 +89,18 @@
 		<PackageReference Include="Mapsui.Maui" Version="5.1.0-beta.5" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Compile Update="Pages\AuthPage.xaml.cs">
+	    <DependentUpon>AuthPage.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiXaml Update="Pages\AuthPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	</ItemGroup>
+
 	<!-- NSwag code generation-->
 	<!-- Download swagger.json from Azure -->
 	<Target Name="DownloadSwaggerJson" BeforeTargets="BeforeBuild" Condition="!Exists('$(ProjectDir)OpenAPIs\swagger.json')">

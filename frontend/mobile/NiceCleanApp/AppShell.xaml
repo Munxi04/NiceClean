@@ -8,8 +8,12 @@
     Title="NiceCleanApp">
 
     <ShellContent
-        Title="Map"
+        Title="Auth"
+        ContentTemplate="{DataTemplate pages:AuthPage}"
+        Route="AuthPage" />
+    <ShellContent 
+        Title="Map" 
         ContentTemplate="{DataTemplate pages:MapPage}"
-        Route="map" />
+        Route="MapPage" />
 
 </Shell>

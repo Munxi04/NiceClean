@@ -137,7 +137,7 @@
                     <!-- Drawer header -->
                     <Border
                         Grid.Row="0"
-                        BackgroundColor="#FF3300"
+                        BackgroundColor="#3B6D11"
                         Padding="10,8,8,8"
                         StrokeThickness="0">
                         <Grid ColumnDefinitions="*,Auto">
@@ -184,6 +184,14 @@
                                     TextColor="{AppThemeBinding Light=#CCCCCC, Dark=#444444}"
                                     Margin="0,6,0,0" />
                             </VerticalStackLayout>
+
+                            <!-- New Sign Out button -->
+                            <Button Text="Sign Out"
+                                BackgroundColor="#3B6D11"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="40"
+                                Clicked="OnSignOutClicked" />
                         </VerticalStackLayout>
 
                         <VerticalStackLayout

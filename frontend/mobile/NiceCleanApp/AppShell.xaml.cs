@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Maui.Core;
+using NiceCleanApp.Pages;
 using Font = Microsoft.Maui.Font;
 
 namespace NiceCleanApp
@@ -17,7 +18,7 @@ namespace NiceCleanApp
 
             var snackbarOptions = new SnackbarOptions
             {
-                BackgroundColor = Color.FromArgb("#FF3300"),
+                BackgroundColor = Color.FromArgb("#3B6D11"),
                 TextColor = Colors.White,
                 ActionButtonTextColor = Colors.Yellow,
                 CornerRadius = new CornerRadius(0),

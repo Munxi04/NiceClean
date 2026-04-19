@@ -1,50 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Fondo blanco sólido -->
-  <rect width="512" height="512" rx="115" fill="#FFFFFF" />
+  <!-- Clean white background (Square) -->
+  <rect width="512" height="512" fill="#FFFFFF" />
 
-  <!-- Brillo solar (centrado y contenido) -->
-  <circle cx="256" cy="256" r="140" fill="#FFC300" opacity="0.25" />
+  <!-- Soft green glow -->
+  <circle cx="256" cy="256" r="230" fill="#97C459" opacity="0.12" />
 
-  <!-- Pin rojo (escalado y centrado, con margen superior) -->
-  <g transform="translate(0, 20)">
-    <path d="M 256 370 
-             C 242 370, 215 340, 196 305 
-             C 176 265, 158 220, 158 175 
-             A 98 98 0 1 1 354 175 
-             C 354 220, 336 265, 316 305 
-             C 296 340, 270 370, 256 370 Z" 
-          fill="#FF3300" />
-
-    <!-- Brillo interior del pin -->
-    <path d="M 256 365 
-             C 244 365, 218 335, 200 302 
-             C 182 264, 164 220, 164 175 
-             A 92 92 0 1 1 348 175 
-             C 348 220, 330 264, 312 302 
-             C 294 335, 268 365, 256 365 Z" 
-          fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="6" stroke-linejoin="round" />
-  </g>
-
-  <!-- Hoja verde (escalada y reposicionada) -->
-  <g transform="rotate(-40 256 220) translate(0, 10)">
-    <!-- Forma de la hoja -->
-    <path d="M 256 140 
-             C 216 175, 206 220, 256 265 
-             C 306 220, 296 175, 256 140 Z" 
-          fill="#00AA44" />
+  <!-- Larger, centered leaf -->
+  <g transform="translate(256, 256) scale(5.2) translate(-14, -14)">
+    <!-- Leaf body -->
+    <path d="M14 3C14 3 5 8 5 16C5 20.4 9.1 24 14 24C18.9 24 23 20.4 23 16C23 8 14 3 14 3Z" 
+          fill="#97C459" />
     
-    <!-- Tallo -->
-    <path d="M 256 265 Q 260 285 268 300" 
-          fill="none" stroke="#00662A" stroke-width="8" stroke-linecap="round" />
-
-    <!-- Vena central -->
-    <path d="M 256 150 C 256 185, 256 225, 256 255" 
-          fill="none" stroke="#004D1A" stroke-width="5" stroke-linecap="round" />
-
-    <!-- Venas laterales -->
-    <path d="M 256 185 C 242 195, 228 200, 218 210" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
-    <path d="M 256 195 C 270 205, 285 210, 295 220" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
-    <path d="M 256 225 C 242 235, 232 240, 222 248" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
-    <path d="M 256 235 C 270 245, 280 250, 290 258" fill="none" stroke="#004D1A" stroke-width="4" stroke-linecap="round" />
+    <!-- Central vein -->
+    <path d="M14 24V12" 
+          stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
+    
+    <!-- Left vein -->
+    <path d="M14 12C14 12 10 15 9 19" 
+          stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
+    
+    <!-- Right vein -->
+    <path d="M14 12C14 12 18 15 19 19" 
+          stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
   </g>
 </svg>

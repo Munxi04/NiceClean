@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NiceCleanApp.Pages.AuthPage"
+             BackgroundColor="#FAFAF8"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView Padding="16,0,16,0">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <VerticalStackLayout Grid.Column="1"
+                                 MaximumWidthRequest="420"
+                                 HorizontalOptions="Center"
+                                 Padding="0,56,0,32"
+                                 Spacing="0">
+
+                <!-- Brand -->
+                <HorizontalStackLayout Spacing="8" Margin="0,0,0,40">
+                    <!-- Combined leaf using two Paths -->
+                    <Grid WidthRequest="28" HeightRequest="28" VerticalOptions="Center">
+                        <Path Data="M14 3C14 3 5 8 5 16C5 20.4 9.1 24 14 24C18.9 24 23 20.4 23 16C23 8 14 3 14 3Z"
+                              Fill="#97C459" />
+                        <Path Data="M14 24V12M14 12C14 12 10 15 9 19M14 12C14 12 18 15 19 19"
+                              Stroke="#3B6D11"
+                              StrokeThickness="1.5" />
+                    </Grid>
+                    <Label FontFamily="InstrumentSerif"
+                           FontSize="22"
+                           TextColor="#1A1A1A"
+                           CharacterSpacing="-0.3">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Nice" />
+                                <Span Text="Clean"
+                                      FontFamily="InstrumentSerifItalic"
+                                      TextColor="#3B6D11"
+                                      FontAttributes="Italic" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                </HorizontalStackLayout>
+
+                <!-- Heading & Subtitle -->
+                <Label x:Name="HeadingLabel"
+                       Text="Welcome back"
+                       FontFamily="InstrumentSerif"
+                       FontSize="28"
+                       TextColor="#1A1A1A"
+                       CharacterSpacing="-0.5"
+                       Margin="0,0,0,6" />
+                <Label x:Name="SubLabel"
+                       Text="Sign in to report and track pollution in your area."
+                       FontFamily="DMSansLight"
+                       FontSize="14"
+                       TextColor="#666666"
+                       Margin="0,0,0,32" />
+
+                <!-- Tabs with Indicator -->
+                <Grid RowDefinitions="Auto,Auto" Margin="0,0,0,28">
+                    <HorizontalStackLayout Grid.Row="0" Spacing="24">
+                        <Button x:Name="TabLogin"
+                                Text="Sign in"
+                                Clicked="OnTabLoginClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="#3B6D11"
+                                FontFamily="DMSansMedium"
+                                FontSize="14"
+                                Padding="0,0,0,10"
+                                BorderWidth="0"
+                                HeightRequest="40" />
+                        <Button x:Name="TabRegister"
+                                Text="Create account"
+                                Clicked="OnTabRegisterClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="#666666"
+                                FontFamily="DMSans"
+                                FontSize="14"
+                                Padding="0,0,0,10"
+                                BorderWidth="0"
+                                HeightRequest="40" />
+                    </HorizontalStackLayout>
+                    <BoxView x:Name="TabIndicator"
+                             Grid.Row="1"
+                             HeightRequest="1.5"
+                             Color="#3B6D11"
+                             HorizontalOptions="Start" />
+                </Grid>
+
+                <!-- Alert Boxes -->
+                <Border x:Name="ErrorBox"
+                        IsVisible="False"
+                        Margin="0,0,0,16"
+                        BackgroundColor="#fcebeb"
+                        StrokeThickness="0.5"
+                        Stroke="#f09595">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Label x:Name="ErrorLabel"
+                           TextColor="#a32d2d"
+                           FontFamily="DMSans"
+                           FontSize="13"
+                           Padding="12,8" />
+                </Border>
+                <Border x:Name="SuccessBox"
+                        IsVisible="False"
+                        Margin="0,0,0,16"
+                        BackgroundColor="#EAF3DE"
+                        StrokeThickness="0.5"
+                        Stroke="#97C459">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Label x:Name="SuccessLabel"
+                           TextColor="#3B6D11"
+                           FontFamily="DMSans"
+                           FontSize="13"
+                           Padding="12,8" />
+                </Border>
+
+                <!-- Login Form -->
+                <VerticalStackLayout x:Name="LoginForm" Spacing="16">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="EMAIL"
+                               FontFamily="DMSansMedium"
+                               FontSize="12"
+                               TextColor="#666666"
+                               CharacterSpacing="0.3" />
+                        <Border Stroke="#DDDDDD" StrokeThickness="0.5" BackgroundColor="#F5F5F5">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8" />
+                            </Border.StrokeShape>
+                            <Entry x:Name="LoginEmail"
+                                   Placeholder="you@example.com"
+                                   Keyboard="Email"
+                                   FontFamily="DMSans"
+                                   FontSize="14"
+                                   TextColor="#1A1A1A"
+                                   HeightRequest="40"
+                                   Margin="12,0" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="PASSWORD"
+                               FontFamily="DMSansMedium"
+                               FontSize="12"
+                               TextColor="#666666"
+                               CharacterSpacing="0.3" />
+                        <Border Stroke="#DDDDDD" StrokeThickness="0.5" BackgroundColor="#F5F5F5">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8" />
+                            </Border.StrokeShape>
+                            <Entry x:Name="LoginPassword"
+                                   Placeholder="••••••••"
+                                   IsPassword="True"
+                                   FontFamily="DMSans"
+                                   FontSize="14"
+                                   TextColor="#1A1A1A"
+                                   HeightRequest="40"
+                                   Margin="12,0" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <Button x:Name="LoginButton"
+                            Text="Sign in"
+                            Clicked="OnLoginClicked"
+                            BackgroundColor="#3B6D11"
+                            TextColor="#EAF3DE"
+                            FontFamily="DMSansMedium"
+                            FontSize="14"
+                            CornerRadius="8"
+                            HeightRequest="42"
+                            Margin="0,8,0,0" />
+                </VerticalStackLayout>
+
+                <!-- Register Form -->
+                <VerticalStackLayout x:Name="RegisterForm" IsVisible="False" Spacing="16">
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label Text="NICKNAME"
+                                   FontFamily="DMSansMedium"
+                                   FontSize="12"
+                                   TextColor="#666666"
+                                   CharacterSpacing="0.3" />
+                            <Border Stroke="#DDDDDD" StrokeThickness="0.5" BackgroundColor="#F5F5F5">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <Entry x:Name="RegNickname"
+                                       Placeholder="EcoWalker"
+                                       FontFamily="DMSans"
+                                       FontSize="14"
+                                       TextColor="#1A1A1A"
+                                       HeightRequest="40"
+                                       Margin="12,0" />
+                            </Border>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="DATE OF BIRTH"
+                                   FontFamily="DMSansMedium"
+                                   FontSize="12"
+                                   TextColor="#666666"
+                                   CharacterSpacing="0.3" />
+                            <Border Stroke="#DDDDDD" StrokeThickness="0.5" BackgroundColor="#F5F5F5">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <DatePicker x:Name="RegDob"
+                                            Format="dd/MM/yyyy"
+                                            FontFamily="DMSans"
+                                            FontSize="14"
+                                            TextColor="#1A1A1A"
+                                            HeightRequest="40"
+                                            Margin="12,0" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </Grid>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="EMAIL"
+                               FontFamily="DMSansMedium"
+                               FontSize="12"
+                               TextColor="#666666"
+                               CharacterSpacing="0.3" />
+                        <Border Stroke="#DDDDDD" StrokeThickness="0.5" BackgroundColor="#F5F5F5">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8" />
+                            </Border.StrokeShape>
+                            <Entry x:Name="RegEmail"
+                                   Placeholder="you@example.com"
+                                   Keyboard="Email"
+                                   FontFamily="DMSans"
+                                   FontSize="14"
+                                   TextColor="#1A1A1A"
+                                   HeightRequest="40"
+                                   Margin="12,0" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="PASSWORD"
+                               FontFamily="DMSansMedium"
+                               FontSize="12"
+                               TextColor="#666666"
+                               CharacterSpacing="0.3" />
+                        <Border Stroke="#DDDDDD" StrokeThickness="0.5" BackgroundColor="#F5F5F5">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8" />
+                            </Border.StrokeShape>
+                            <Entry x:Name="RegPassword"
+                                   Placeholder="Min. 8 characters"
+                                   IsPassword="True"
+                                   FontFamily="DMSans"
+                                   FontSize="14"
+                                   TextColor="#1A1A1A"
+                                   HeightRequest="40"
+                                   Margin="12,0" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <Button x:Name="RegisterButton"
+                            Text="Create account"
+                            Clicked="OnRegisterClicked"
+                            BackgroundColor="#3B6D11"
+                            TextColor="#EAF3DE"
+                            FontFamily="DMSansMedium"
+                            FontSize="14"
+                            CornerRadius="8"
+                            HeightRequest="42"
+                            Margin="0,8,0,0" />
+                </VerticalStackLayout>
+
+                <!-- Terms -->
+                <Label Text="By continuing you agree to NiceClean's terms and privacy policy."
+                       FontFamily="DMSansLight"
+                       FontSize="12"
+                       TextColor="#AAAAAA"
+                       HorizontalTextAlignment="Center"
+                       Margin="0,24,0,0" />
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>
