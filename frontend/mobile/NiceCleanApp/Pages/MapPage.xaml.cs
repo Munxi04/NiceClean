@@ -39,7 +39,10 @@ public partial class MapPage : ContentPage
     // For API calls that require user info (e.g. creating a pin), we can access the current user session
     private readonly IUserSession _userSession;
 
+    // For sign-out flow, we need to clear stored credentials
     private readonly ICredentialService _credentialService;
+
+    private bool _isAccountMenuVisible = false;
 
     public MapPage(IClient apiClient, IUserSession userSession, ICredentialService credentialService)
     {
@@ -366,6 +369,95 @@ public partial class MapPage : ContentPage
         // Slide out right (TranslationX: 0 → DrawerWidth)
         await MenuPanel.TranslateToAsync(DrawerWidth, 0, 200, Easing.CubicIn);
         MenuOverlay.IsVisible = false;
+
+        // Reset drawer state for next open
+        if (_isAccountMenuVisible)
+        {
+            MainMenuContent.TranslationX = 0;
+            AccountView.TranslationX = 280;
+            MenuHeaderLabel.Text = "Menu";
+            MenuHeaderLabel.Margin = new Thickness(12, 0, 0, 0);
+            MenuBackButton.IsVisible = false;
+            _isAccountMenuVisible = false;
+            MenuCloseButton.IsVisible = true;
+        }
+    }
+
+    private async void OnAccountMenuItemClicked(object? sender, EventArgs e)
+    {
+        PopulateMenuUserInfo();
+        await NavigateToAccountViewAsync();
+    }
+
+    private async Task NavigateToAccountViewAsync()
+    {
+        _isAccountMenuVisible = true;
+        MenuHeaderLabel.Text = "Account";
+        MenuHeaderLabel.Margin = new Thickness(0);
+        MenuBackButton.IsVisible = true;
+        MenuCloseButton.IsVisible = false;
+
+        // Slide main menu out to the left, account view in from the right
+        var slideOut = MainMenuContent.TranslateToAsync(-280, 0, 220, Easing.CubicInOut);
+        var slideIn = AccountView.TranslateToAsync(0, 0, 220, Easing.CubicInOut);
+        await Task.WhenAll(slideOut, slideIn);
+    }
+
+    private async void OnDeleteAccountClicked(object? sender, EventArgs e)
+    {
+        bool confirmed = await DisplayAlertAsync(
+            "⚠️ Delete Account",
+            "This will permanently delete your account and all your data. This action cannot be undone.",
+            "Delete",
+            "Cancel");
+
+        if (!confirmed) return;
+
+        var userId = _userSession.CurrentUser?.Id;
+        if (userId == null) return;
+
+        try
+        {
+            await _apiClient.UserDELETEAsync(userId.Value);
+            _userSession.Clear();
+            _credentialService.ClearCredentials();
+
+            await CloseMenuAsync();
+            await Shell.Current.GoToAsync("//AuthPage");
+        }
+        catch (Exception ex)
+        {
+            await AppShell.DisplaySnackbarAsync($"Could not delete account: {ex.Message}");
+        }
+    }
+
+    private async void OnMenuBackClicked(object? sender, EventArgs e)
+    {
+        await NavigateToMainMenuAsync();
+    }
+
+    private async Task NavigateToMainMenuAsync()
+    {
+        _isAccountMenuVisible = false;
+        MenuHeaderLabel.Text = "Menu";
+        MenuHeaderLabel.Margin = new Thickness(12, 0, 0, 0);
+        MenuBackButton.IsVisible = false;
+        MenuCloseButton.IsVisible = true;
+        
+
+        var slideIn = MainMenuContent.TranslateToAsync(0, 0, 220, Easing.CubicInOut);
+        var slideOut = AccountView.TranslateToAsync(280, 0, 220, Easing.CubicInOut);
+        await Task.WhenAll(slideIn, slideOut);
+    }
+
+    private void PopulateMenuUserInfo()
+    {
+        var user = _userSession.CurrentUser;
+        if (user == null) return;
+
+        MenuNicknameLabel.Text = user.Nickname ?? "No nickname";
+        MenuEmailLabel.Text = user.Email ?? "";
+        MenuWalksLabel.Text = $"{user.NumberOfWalks} walk{(user.NumberOfWalks == 1 ? "" : "s")}";
     }
 
     // ──────────────────────────────────────────────

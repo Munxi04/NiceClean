@@ -132,24 +132,45 @@
                 StrokeThickness="0"
                 StrokeShape="RoundRectangle 0">
 
+                <Border.Clip>
+                    <RectangleGeometry Rect="0,0,280,900" />
+                </Border.Clip>
+
                 <Grid RowDefinitions="Auto,*">
 
                     <!-- Drawer header -->
                     <Border
                         Grid.Row="0"
                         BackgroundColor="#3B6D11"
-                        Padding="10,8,8,8"
-                        StrokeThickness="0">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <Label
+                        StrokeThickness="0"
+                        Padding="4,8,8,8">
+                        <Grid ColumnDefinitions="Auto,*,Auto" HorizontalOptions="Fill">
+                            <!-- Back arrow (only visible on account view) -->
+                            <Button
+                                x:Name="MenuBackButton"
                                 Grid.Column="0"
+                                Text="‹"
+                                FontSize="22"
+                                TextColor="White"
+                                BackgroundColor="Transparent"
+                                BorderWidth="0"
+                                HeightRequest="5"
+                                WidthRequest="5"
+                                IsVisible="False"
+                                Clicked="OnMenuBackClicked"
+                                Padding="0,0,0,4"/>
+                            <Label
+                                x:Name="MenuHeaderLabel"
+                                Grid.Column="1"
                                 Text="Menu"
                                 TextColor="White"
                                 FontSize="22"
                                 FontAttributes="Bold"
-                                VerticalOptions="Center" />
+                                VerticalOptions="Center"
+                                Margin="12,0,0,0"/>
                             <!-- Close button -->
                             <Button
+                                x:Name="MenuCloseButton"
                                 Grid.Column="1"
                                 Text="✕"
                                 FontSize="18"
@@ -158,55 +179,66 @@
                                 BorderWidth="0"
                                 HeightRequest="36"
                                 WidthRequest="36"
-                                Clicked="OnMenuCloseClicked" />
+                                Clicked="OnMenuCloseClicked"
+                                Margin="200,0,0,0"/>
                         </Grid>
                     </Border>
 
-                    <!-- Drawer body -->
-                    <Grid Grid.Row="1" RowDefinitions="*,Auto">
+                    <!-- Sliding content area -->
+                    <Grid 
+                        Grid.Row="1" 
+                        x:Name="DrawerContentArea" 
+                        IsClippedToBounds="True">
 
-                        <VerticalStackLayout
+                        <!-- Main menu content -->
+                        <Grid x:Name="MainMenuContent" RowDefinitions="*,Auto">
+
+                            <VerticalStackLayout
                             Grid.Row="0"
                             Padding="20"
                             Spacing="24">
 
-                            <!-- Placeholder menu items for future use -->
-                            <VerticalStackLayout Spacing="4">
-                                <Label
-                                    Text="ACCOUNT"
-                                    FontSize="11"
-                                    FontAttributes="Bold"
-                                    CharacterSpacing="1"
-                                    TextColor="{AppThemeBinding Light=#999999, Dark=#777777}" />
-                                <Label
-                                    Text="Coming soon…"
-                                    FontSize="14"
-                                    TextColor="{AppThemeBinding Light=#CCCCCC, Dark=#444444}"
-                                    Margin="0,6,0,0" />
+                                <!-- Placeholder menu items for future use -->
+                                <VerticalStackLayout Spacing="4">
+                                    <Label
+                                        Text="ACCOUNT"
+                                        FontSize="11"
+                                        FontAttributes="Bold"
+                                        CharacterSpacing="1"
+                                        TextColor="{AppThemeBinding Light=#999999, Dark=#777777}" />
+                                    <Button
+                                        Text="My Account"
+                                        Margin="0,6,0,0"
+                                        BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2A2A2A}"
+                                        TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}"
+                                        HorizontalOptions="Start"
+                                        CornerRadius="8"
+                                        HeightRequest="44"
+                                        FontSize="14"
+                                        BorderWidth="0"
+                                        Clicked="OnAccountMenuItemClicked" />
+                                </VerticalStackLayout>
+
+                                <!-- Sign Out button -->
+                                <Button Text="Sign Out"
+                                    BackgroundColor="#3B6D11"
+                                    TextColor="White"
+                                    CornerRadius="8"
+                                    HeightRequest="40"
+                                    Clicked="OnSignOutClicked" />
                             </VerticalStackLayout>
 
-                            <!-- New Sign Out button -->
-                            <Button Text="Sign Out"
-                                BackgroundColor="#3B6D11"
-                                TextColor="White"
-                                CornerRadius="8"
-                                HeightRequest="40"
-                                Clicked="OnSignOutClicked" />
-                        </VerticalStackLayout>
+                            <VerticalStackLayout
+                                 Grid.Row="1"
+                                 Padding="20"
+                                 Spacing="12">
 
-                        <VerticalStackLayout
-                             Grid.Row="1"
-                             Padding="20"
-                             Spacing="12">
+                                <!-- Divider -->
+                                <BoxView
+                                     HeightRequest="1"
+                                     BackgroundColor="{AppThemeBinding Light=#EEEEEE, Dark=#333333}" />
 
-                            <!-- Divider -->
-                            <BoxView
-                                 HeightRequest="1"
-                                 BackgroundColor="{AppThemeBinding Light=#EEEEEE, Dark=#333333}" />
-
-                            <!-- Theme section -->
-                            <VerticalStackLayout Spacing="12">
-
+                                <!-- Theme section -->
                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
 
                                     <!-- Light theme button -->
@@ -248,6 +280,55 @@
                                     </Border>
                                 </Grid>
                             </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- ACCOUNT VIEW (starts off-screen to the right) -->
+                        <VerticalStackLayout
+                            x:Name="AccountView"
+                            Padding="20"
+                            Spacing="20"
+                            TranslationX="280">
+
+                            <!-- User info card -->
+                            <Border
+                                Padding="16"
+                                StrokeShape="RoundRectangle 12"
+                                StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                                BackgroundColor="{AppThemeBinding Light=#F9F9F9, Dark=#2A2A2A}">
+                                <VerticalStackLayout Spacing="8">
+                                    <Label
+                                        x:Name="MenuNicknameLabel"
+                                        FontSize="17"
+                                        FontAttributes="Bold"
+                                        TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}" />
+                                    <Label
+                                        x:Name="MenuEmailLabel"
+                                        FontSize="13"
+                                        TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}" />
+                                    <BoxView HeightRequest="1"
+                                         Color="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                                         Margin="0,4" />
+                                    <HorizontalStackLayout Spacing="6">
+                                        <Label Text="🚶" FontSize="13" />
+                                        <Label
+                                            x:Name="MenuWalksLabel"
+                                            FontSize="13"
+                                            TextColor="{AppThemeBinding Light=#444444, Dark=#CCCCCC}" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <!-- Delete account -->
+                            <Button
+                                Text="Delete Account"
+                                BackgroundColor="#8B1A1A"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                FontSize="14"
+                                Clicked="OnDeleteAccountClicked" />
+
                         </VerticalStackLayout>
                     </Grid>
                 </Grid>
