@@ -1,5 +1,6 @@
-﻿using NiceCleanApp.Services;
+﻿using CommunityToolkit.Maui.Core;
 using NiceCleanApp.Pages;
+using NiceCleanApp.Services;
 
 namespace NiceCleanApp;
 
@@ -19,7 +20,9 @@ public partial class App : Application
     {
         base.OnStart();
 
-        await Task.Delay(100); // Small delay to ensure MauiContext is available
+        // Set status bar color and style
+        CommunityToolkit.Maui.Core.Platform.StatusBar.SetColor(Color.FromArgb("#333B6D11"));
+        CommunityToolkit.Maui.Core.Platform.StatusBar.SetStyle(StatusBarStyle.LightContent);
 
         // Get services
         var services = Windows[0].Page?.Handler?.MauiContext?.Services;

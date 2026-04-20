@@ -1,3 +1,5 @@
+using CommunityToolkit.Maui.Core;
+using CommunityToolkit.Maui.Core.Platform;
 using CommunityToolkit.Maui.Views;
 using Mapsui;
 using Mapsui.Projections;
