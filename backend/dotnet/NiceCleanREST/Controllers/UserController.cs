@@ -55,6 +55,10 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     public ActionResult<User> Post(User user)
     {
+        user.IsVerified = false;
+        user.NumberOfWalks = 0;
+        user.Id = 0;
+
         var created = _repo.Add(user);
 
         return Created(

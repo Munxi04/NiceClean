@@ -11,6 +11,7 @@ public class NiceCleanDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Pin> Pins { get; set; }
+    public DbSet<PinVote> PinVotes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,6 +52,29 @@ public class NiceCleanDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure PinVotes table
+        modelBuilder.Entity<PinVote>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            // This is the magic rule to prevent duplicate votes per pin by the same user:
+            entity.HasIndex(e => new { e.PinId, e.UserId }).IsUnique();
+
+            entity.Property(e => e.VoteType).HasConversion<string>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Foreign key config
+            entity.HasOne<Pin>()
+                .WithMany()
+                .HasForeignKey(e => e.PinId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // Deleting a user deletes their votes
         });
     }
 }

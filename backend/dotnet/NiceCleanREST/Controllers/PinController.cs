@@ -16,11 +16,13 @@ public class PinController : ControllerBase
     
     private readonly IPinRepository _pinRepo;
     private readonly IUserRepository _userRepo;
+    private readonly IPinVoteRepository _voteRepo;
 
-    public PinController(IPinRepository pinRepo, IUserRepository userRepo)
+    public PinController(IPinRepository pinRepo, IUserRepository userRepo, IPinVoteRepository voteRepo)
     {
         _pinRepo = pinRepo;
         _userRepo = userRepo;
+        _voteRepo = voteRepo;
     }
 
     // GET: api/<PinController>
@@ -87,18 +89,80 @@ public class PinController : ControllerBase
         );
     }
 
+    // POST api/<PinController>/5/vote
+    [HttpPost("{id}/vote")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<Pin> Vote(int id, [FromBody] PinVoteDto dto)
+    {
+        var pin = _pinRepo.GetById(id);
+
+        if (pin == null)
+        {
+            return NotFound("Pin not found.");
+        }
+
+        if (pin.UserId == dto.UserId)
+        {
+            return BadRequest("You cannot vote on a pin that you created.");
+        }
+
+        if (_voteRepo.HasUserVoted(id, dto.UserId))
+        {
+            return BadRequest("User has already voted on this pin.");
+        }
+
+        var newVote = new PinVote(
+            id: 0,
+            pinId: id,
+            userId: dto.UserId,
+            voteType: dto.VoteType,
+            createdAt: DateTime.UtcNow
+        );
+
+        var createdVote = _voteRepo.AddVote(newVote);
+
+        if (createdVote == null)
+        {
+            return BadRequest("Failed to register vote.");
+        }
+
+        if (dto.VoteType == VoteType.Confirmed)
+        {
+            int confirmedCount = _voteRepo.GetVoteCount(id, VoteType.Confirmed);
+
+            if (confirmedCount >= 3 && pin.Status == PinStatus.Unverified)
+            {
+                pin.Status = PinStatus.Verified;
+                _pinRepo.Update(id, pin);
+            }
+        }
+
+        return Ok(pin);
+    }
+
     // PUT api/<PinController>/5
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<Pin> Put(int id, Pin pinData)
+    public ActionResult<Pin> Put(int id, [FromBody] PinUpdateDto dto)
     {
-        var updated = _pinRepo.Update(id, pinData);
+        var existingPin = _pinRepo.GetById(id);
 
-        if (updated == null)
+        if (existingPin == null)
         {
             return NotFound();
         }
+
+        existingPin.Severity = dto.Severity;
+        existingPin.Radius = dto.Radius;
+        existingPin.PollutionType = dto.PollutionType;
+        existingPin.Latitude = dto.Latitude;
+        existingPin.Longitude = dto.Longitude;
+        existingPin.LocationName = dto.LocationName;
+
+        var updated = _pinRepo.Update(id, existingPin);
 
         return Ok(updated);
     }
