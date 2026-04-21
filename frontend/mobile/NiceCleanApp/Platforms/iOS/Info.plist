@@ -28,5 +28,14 @@
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>NiceClean monitors nearby pollution spots even in the background.</string>
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>NiceClean shows pollution spots near your location.</string>
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>location</string>
+    <string>fetch</string>
+  </array>
 </dict>
 </plist>

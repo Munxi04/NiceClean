@@ -3,9 +3,10 @@ using Fonts;
 using Microsoft.Extensions.Logging;
 using NiceCleanApp.Pages;
 using NiceCleanApp.Services;
-using Syncfusion.Maui.Toolkit.Hosting;
+using Plugin.LocalNotification;
 using SkiaSharp.Views.Maui.Controls;
 using SkiaSharp.Views.Maui.Handlers;
+using Syncfusion.Maui.Toolkit.Hosting;
 
 namespace NiceCleanApp;
 
@@ -57,7 +58,13 @@ public static class MauiProgram
 
         // Pages
         builder.Services.AddTransient<AuthPage>();
-        builder.Services.AddSingleton<MapPage>();
+        builder.Services.AddTransient<MapPage>();
+
+        // Local notifications
+        builder.UseLocalNotification();
+
+        builder.Services.AddSingleton<IPinProximityService, PinProximityService>();
+        builder.Services.AddSingleton<IPinNotificationService, PinNotificationService>();
 
         return builder.Build();
     }
