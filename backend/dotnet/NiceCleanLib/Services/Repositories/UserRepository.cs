@@ -12,6 +12,50 @@ public class UserRepository : IUserRepository
     private readonly List<User> _users = new();
     private int _nextId = 1;
 
+    // Dummy data with 4 initial users for testing purposes
+    public UserRepository()
+    {
+        Add(new User(
+            id: 0,
+            email: "test@test.com",
+            password: "123",
+            age: new DateTime(1990, 5, 15),
+            nickname: "SuperUser",
+            numberOfWalks: 12,
+            isVerified: true
+        ));
+
+        Add(new User(
+            id: 0,
+            email: "bel@bel.com",
+            password: "123",
+            age: new DateTime(1985, 10, 20),
+            nickname: "Bel",
+            numberOfWalks: 2,
+            isVerified: false
+        ));
+
+        Add(new User(
+            id: 0,
+            email: "jul@jul.com",
+            password: "123",
+            age: new DateTime(1995, 1, 10),
+            nickname: "Jul",
+            numberOfWalks: 0,
+            isVerified: false
+        ));
+
+        Add(new User(
+            id: 0,
+            email: "pat@pat.com",
+            password: "123",
+            age: new DateTime(1995, 1, 10),
+            nickname: "Pat",
+            numberOfWalks: 0,
+            isVerified: false
+        ));
+    }
+
     public List<User> GetAll()
     {
         return _users;
