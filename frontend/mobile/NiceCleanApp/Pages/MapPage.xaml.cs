@@ -89,6 +89,8 @@ public partial class MapPage : ContentPage
             VerticalAlignment = VerticalAlignment.Top
         });
 
+        // Show user's current location as a blue dot with accuracy circle
+        MainMap.Map.Layers.Add(new MyLocationLayer(MainMap.Map));
         // Centre on Nice, France
         var nice = SphericalMercator.FromLonLat(7.2620, 43.7102);
         MainMap.Map.Navigator.CenterOnAndZoomTo(new MPoint(nice), 12);
@@ -100,20 +102,30 @@ public partial class MapPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await RequestLocationPermissionAsync();
-        await LoadExistingPinsAsync();
-        await _pinNotificationService.RequestPermissionAsync();
-        UpdateThemeHighlight();
-        SetSelectedTab(Tab.Map);
+        try
+        {
+            await RequestLocationPermissionAsync();
+            await LoadExistingPinsAsync();
+            await _pinNotificationService.RequestPermissionAsync();
+            UpdateThemeHighlight();
+            SetSelectedTab(Tab.Map);
 
-        _pollCts = new CancellationTokenSource();
-        _ = PollPinsAsync(_pollCts.Token);
+            _pollCts = new CancellationTokenSource();
+            _ = PollPinsAsync(_pollCts.Token);
+        }
+        catch (Exception ex)
+        {
+            // This will tell you exactly what's throwing
+            System.Diagnostics.Debug.WriteLine($"OnAppearing error: {ex}");
+            await AppShell.DisplaySnackbarAsync($"Startup error: {ex.Message}");
+        }
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
         _pollCts?.Cancel();
+        Geolocation.StopListeningForeground();
 
         // Keep monitoring alive in background via the platform service;
         // only pause the in-app popup logic. The background service / iOS
@@ -279,7 +291,7 @@ public partial class MapPage : ContentPage
             _pendingPinLocation = clickPoint;
             _isPlacingPin = false;
             PlacingPinBanner.IsVisible = false;
-            ShowPinConfirmationPopup(sender, e);
+            ShowPinReportPopup(sender, e);
             return;
         }
 
@@ -341,11 +353,11 @@ public partial class MapPage : ContentPage
     /// method should be called in response to a map click event when a pin placement is pending.</remarks>
     /// <param name="sender">The source of the event, typically the map control that was clicked.</param>
     /// <param name="e">The event data containing information about the map click location.</param>
-    private async void ShowPinConfirmationPopup(object? sender, MapClickedEventArgs e)
+    private async void ShowPinReportPopup(object? sender, MapClickedEventArgs e)
     {
         if (_pendingPinLocation == null) return;
 
-        var popup = new PinConfirmationPopup(_pendingPinLocation);
+        var popup = new PinReportPopup(_pendingPinLocation);
         this.ShowPopup(popup);
         var result = await popup.Result;
 
@@ -371,9 +383,9 @@ public partial class MapPage : ContentPage
     /// </summary>
     /// <remarks>Displays a notification to the user indicating success or failure. If the user is not logged
     /// in or the pin location is not set, the operation is not performed.</remarks>
-    /// <param name="result">The result of the pin confirmation dialog containing pollution details to be reported.</param>
+    /// <param name="result">The result of the pin report dialog containing pollution details to be reported.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    private async Task CreatePollutionPinAsync(PinConfirmationPopup.PinConfirmationResult result)
+    private async Task CreatePollutionPinAsync(PinReportPopup.PinReportResult result)
     {
         if (_pendingPinLocation == null) return;
 

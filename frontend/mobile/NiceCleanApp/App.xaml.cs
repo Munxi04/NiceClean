@@ -21,10 +21,12 @@ public partial class App : Application
         base.OnStart();
 
         // Set status bar color and style on supported platforms
-        if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS() || OperatingSystem.IsMacCatalyst())
+        if (OperatingSystem.IsAndroid() && OperatingSystem.IsAndroidVersionAtLeast(23) ||
+            OperatingSystem.IsIOS() || OperatingSystem.IsMacCatalyst())
         {
             try
             {
+                // Only call SetColor on Android API 23+ (guard above), and on other supported platforms
                 CommunityToolkit.Maui.Core.Platform.StatusBar.SetColor(Color.FromArgb("#333B6D11"));
                 CommunityToolkit.Maui.Core.Platform.StatusBar.SetStyle(StatusBarStyle.LightContent);
             }

@@ -1,5 +1,3 @@
-using CommunityToolkit.Maui.Core;
-using CommunityToolkit.Maui.Core.Platform;
 using CommunityToolkit.Maui.Views;
 using Mapsui;
 using Mapsui.Projections;
@@ -7,14 +5,14 @@ using NiceCleanApp.Services;
 
 namespace NiceCleanApp.Pages.Controls;
 
-public partial class PinConfirmationPopup : Popup
+public partial class PinReportPopup : Popup
 {
     private readonly double _latitude;
     private readonly double _longitude;
     private string _address;
-    private readonly TaskCompletionSource<PinConfirmationResult> _tcs = new();
-    public Task<PinConfirmationResult> Result => _tcs.Task;
-    public PinConfirmationPopup(MPoint mapsuiPoint)
+    private readonly TaskCompletionSource<PinReportResult> _tcs = new();
+    public Task<PinReportResult> Result => _tcs.Task;
+    public PinReportPopup(MPoint mapsuiPoint)
     {
         InitializeComponent();
 
@@ -90,7 +88,7 @@ public partial class PinConfirmationPopup : Popup
         // Get the selected type string
         PollutionType type = (PollutionType)TypePicker.SelectedIndex;
 
-        var result = new PinConfirmationResult
+        var result = new PinReportResult
         {
             Latitude = _latitude,
             Longitude = _longitude,
@@ -145,7 +143,7 @@ public partial class PinConfirmationPopup : Popup
     }
 
     // Nested result class
-    public class PinConfirmationResult
+    public class PinReportResult
     {
         public required PollutionSeverity Severity { get; set; }
         public required PollutionType Type { get; set; }

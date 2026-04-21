@@ -94,6 +94,9 @@
 	  <Compile Update="Pages\AuthPage.xaml.cs">
 	    <DependentUpon>AuthPage.xaml</DependentUpon>
 	  </Compile>
+	  <Compile Update="Pages\Controls\PinReportPopup.xaml.cs">
+	    <DependentUpon>PinReportPopup.xaml</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>

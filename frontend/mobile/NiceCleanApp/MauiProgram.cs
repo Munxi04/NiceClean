@@ -37,7 +37,9 @@ public static class MauiProgram
             .ConfigureMauiHandlers(handlers =>
             {
                 // Register SkiaSharp handler for SKGLView so MAUI can map the control to a platform view
+#if !(IOS || MACCATALYST)
                 handlers.AddHandler<SKGLView, SKGLViewHandler>();
+#endif
             });
 
 #if DEBUG

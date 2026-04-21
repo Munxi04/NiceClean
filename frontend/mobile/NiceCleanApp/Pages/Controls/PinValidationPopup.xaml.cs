@@ -64,7 +64,8 @@ public partial class PinValidationPopup : Popup
 
         // Hide "Confirm still here" for pins that are already Verified —
         // there's nothing left to confirm; the user can only mark it cleaned.
-        VerifyButton.IsVisible = pin.Status == PinStatus.Unverified;
+        VerifyButton.IsVisible = _apiClient.HasVotedAsync(pin.Id, _currentUserId).Result == false
+            && pin.Status != PinStatus.Verified;
     }
 
     // ──────────────────────────────────────────────
@@ -74,16 +75,9 @@ public partial class PinValidationPopup : Popup
     private async void OnVerifyClicked(object? sender, EventArgs e)
         => await SubmitVoteAsync();
 
-    /// <summary>
-    /// For the moment this simply closes the popup and leaves the pin as Unverified.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
+    // For the moment this simply closes the popup and leaves the pin as Unverified.
     private async void OnMarkCleanedClicked(object? sender, EventArgs e)
-    {
-        VerifyButton.IsVisible = false;
-        await SubmitVoteAsync();
-    }
+        => _ = CloseAsync();
 
     /// <summary>
     /// Confirms pollution is still present via POST /api/Pin/{id}/vote.
