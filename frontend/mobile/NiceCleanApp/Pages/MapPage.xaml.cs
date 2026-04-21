@@ -22,6 +22,10 @@ namespace NiceCleanApp.Pages;
 public partial class MapPage : ContentPage
 {
     private readonly IClient _apiClient;
+    private readonly IUserSession _userSession;
+    private readonly ICredentialService _credentialService;
+    private readonly IPinProximityService _proximityService;
+    private readonly IPinNotificationService _pinNotificationService;
 
     // Manage tabs
     private enum Tab { Map, PlacePin, Events, Menu }
@@ -36,27 +40,39 @@ public partial class MapPage : ContentPage
     // Drawer width must match WidthRequest in XAML
     private const double DrawerWidth = 280;
 
-    // For API calls that require user info (e.g. creating a pin), we can access the current user session
-    private readonly IUserSession _userSession;
-
-    // For sign-out flow, we need to clear stored credentials
-    private readonly ICredentialService _credentialService;
-
     private bool _isAccountMenuVisible = false;
+    private bool _validationPopupOpen = false;
 
-    public MapPage(IClient apiClient, IUserSession userSession, ICredentialService credentialService)
+    private CancellationTokenSource? _pollCts;
+
+    public MapPage(IClient apiClient, 
+                   IUserSession userSession, 
+                   ICredentialService credentialService,
+                   IPinProximityService proximityService,
+                   IPinNotificationService pinNotificationService)
     {
         InitializeComponent();
         _apiClient = apiClient;
         _userSession = userSession;
         _credentialService = credentialService;
+        _proximityService = proximityService;
+        _pinNotificationService = pinNotificationService;
+
+        // Subscribe to proximity events once — never re-subscribe.
+        proximityService.PinEntered += OnProximityPinEntered;
+
         InitializeMap();
     }
 
     // ──────────────────────────────────────────────
     // Map setup
     // ──────────────────────────────────────────────
-
+    /// <summary>
+    /// Initializes the map control with default layers, widgets, and a centered view.
+    /// </summary>
+    /// <remarks>Sets up the map to use the Web Mercator projection (EPSG:3857), adds an OpenStreetMap tile
+    /// layer and a pin layer, and configures zoom and scale bar widgets. The map view is centered and zoomed to Nice,
+    /// France. Call this method during application startup or when resetting the map to its default state.</remarks>
     private void InitializeMap()
     {
         MainMap.Map = new Map
@@ -81,16 +97,48 @@ public partial class MapPage : ContentPage
     // ──────────────────────────────────────────────
     // Lifecycle
     // ──────────────────────────────────────────────
-
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         await RequestLocationPermissionAsync();
         await LoadExistingPinsAsync();
+        await _pinNotificationService.RequestPermissionAsync();
         UpdateThemeHighlight();
         SetSelectedTab(Tab.Map);
+
+        _pollCts = new CancellationTokenSource();
+        _ = PollPinsAsync(_pollCts.Token);
     }
 
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        _pollCts?.Cancel();
+
+        // Keep monitoring alive in background via the platform service;
+        // only pause the in-app popup logic. The background service / iOS
+        // delegate will send a notification instead.
+        // If you want to completely stop when backgrounded, call:
+        //   _proximityService.StopMonitoring();
+    }
+
+    private async Task PollPinsAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1), ct).ContinueWith(_ => { }); // swallow cancellation
+            if (!ct.IsCancellationRequested)
+                await LoadExistingPinsAsync();
+        }
+    }
+
+    /// <summary>
+    /// Requests location permission from the user if it has not already been granted.
+    /// </summary>
+    /// <remarks>This method checks the current location permission status and prompts the user to grant
+    /// permission if necessary. It should be called before attempting to access location services that require user
+    /// consent.</remarks>
+    /// <returns>A task that represents the asynchronous operation of requesting location permission.</returns>
     private static async Task RequestLocationPermissionAsync()
     {
         var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
@@ -101,6 +149,12 @@ public partial class MapPage : ContentPage
     // ──────────────────────────────────────────────
     // Load existing pins from API
     // ──────────────────────────────────────────────
+    /// <summary>
+    /// Asynchronously loads all existing pins from the API and updates the map layer with the retrieved pins.
+    /// </summary>
+    /// <remarks>If an error occurs while loading pins, a notification is displayed to the user. The method
+    /// clears the current pin layer before adding the loaded pins.</remarks>
+    /// <returns>A task that represents the asynchronous load operation.</returns>
     private async Task LoadExistingPinsAsync()
     {
         try
@@ -112,6 +166,10 @@ public partial class MapPage : ContentPage
                 AddPinFeatureToLayer(pin);
 
             MainMap.Map.Refresh();
+
+            // (Re)start proximity monitoring with the fresh pin list.
+            var userId = _userSession.CurrentUser?.Id ?? 0;
+            _proximityService.StartMonitoring(pins, userId);
         }
         catch (Exception ex)
         {
@@ -120,9 +178,73 @@ public partial class MapPage : ContentPage
     }
 
     // ──────────────────────────────────────────────
-    // Hit-testing: find a pin near the clicked point (within 20 screen pixels)
+    // Proximity event → show validation popup or notification
     // ──────────────────────────────────────────────
 
+    private void OnProximityPinEntered(object? sender, Pin pin)
+    {
+        // This runs on the main thread (guaranteed by PinProximityService).
+
+        bool appIsForegrounded = Application.Current?.Windows
+            .Any(w => w.IsActivated) ?? false;
+
+        if (appIsForegrounded)
+        {
+            ShowValidationPopup(pin);
+        }
+        else
+        {
+            // App is backgrounded — send a local notification instead.
+            _pinNotificationService.NotifyNearbyPin(pin);
+        }
+    }
+
+    private async void ShowValidationPopup(Pin pin)
+    {
+        // Avoid stacking popups if the user moves between two close pins.
+        if (_validationPopupOpen) return;
+
+        _validationPopupOpen = true;
+
+        var currentUserId = _userSession.CurrentUser?.Id ?? 0;
+        if (currentUserId == 0)
+        {
+            await AppShell.DisplaySnackbarAsync("Error: User not logged in.");
+            return;
+        }
+        try
+        {
+            var popup = new PinValidationPopup(pin, _apiClient, currentUserId);
+            this.ShowPopup(popup);
+            var chosenStatus = await popup.Result;
+
+            if (chosenStatus.HasValue)
+            {
+                // Refresh the pin's visual on the map immediately.
+                await LoadExistingPinsAsync();
+
+                string msg = chosenStatus.Value == PinStatus.Cleaned
+                    ? "Great job — the area is marked as cleaned! 🌿"
+                    : "Thanks for confirming the pollution is still there.";
+                await AppShell.DisplaySnackbarAsync(msg);
+            }
+        }
+        finally
+        {
+            _validationPopupOpen = false;
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // Hit-testing: find a pin near the clicked point (within 20 screen pixels)
+    // ──────────────────────────────────────────────
+    /// <summary>
+    /// Finds the first pin located within a 20-pixel radius of the specified world point.
+    /// </summary>
+    /// <remarks>The search radius is dynamically calculated based on the current map zoom level to correspond
+    /// to 20 screen pixels. This method is typically used for hit-testing in interactive map scenarios.</remarks>
+    /// <param name="worldPoint">The location in world coordinates to test for proximity to pins.</param>
+    /// <returns>A pin that is within 20 screen pixels of the specified point; otherwise, null if no pin is found nearby.</returns>
     private Pin? FindPinAtPoint(MPoint worldPoint)
     {
         // Convert 20 screen pixels → world units using current zoom level
@@ -145,24 +267,8 @@ public partial class MapPage : ContentPage
     }
 
     // ──────────────────────────────────────────────
-    // Place-pin flow
+    // Map click handler
     // ──────────────────────────────────────────────
-
-    private void OnPlacePinTabClicked(object? sender, EventArgs e)
-    {
-        if (_isPlacingPin == false)
-        {
-            SetSelectedTab(Tab.PlacePin);
-            _isPlacingPin = true;
-            PlacingPinBanner.IsVisible = true;
-        }
-        else
-        {
-            OnMapTabClicked(sender, e);
-        }
-            
-    }
-
     private void OnMapClicked(object? sender, MapClickedEventArgs e)
     {
         var clickPoint = e.Point.ToMapsui();
@@ -181,11 +287,60 @@ public partial class MapPage : ContentPage
         var hit = FindPinAtPoint(clickPoint);
         if (hit != null)
         {
-            var popup = new PinInfoPopup(hit);
-            this.ShowPopup(popup);
+            var userId = _userSession.CurrentUser?.Id ?? -1;
+
+            // If the tapped pin belongs to another user and is actionable,
+            // show the validation popup directly (user tapped intentionally).
+            if (hit.UserId != userId
+                && hit.Status != PinStatus.Cleaned
+                && hit.Status != PinStatus.Deleted)
+            {
+                ShowValidationPopup(hit);
+            }
+            else
+            {
+                // Own pin or already resolved — just show info.
+                var popup = new PinInfoPopup(hit);
+                this.ShowPopup(popup);
+            }
         }
     }
 
+    // ──────────────────────────────────────────────
+    // Place-pin flow
+    // ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Handles the click event for the Place Pin tab, toggling the pin placement mode.
+    /// </summary>
+    /// <remarks>If pin placement mode is not active, this method activates it and displays the relevant UI.
+    /// If pin placement mode is already active, it switches back to the map tab.</remarks>
+    /// <param name="sender">The source of the event, typically the UI element that was clicked.</param>
+    /// <param name="e">An EventArgs object that contains the event data.</param>
+    private void OnPlacePinTabClicked(object? sender, EventArgs e)
+    {
+        if (!_isPlacingPin)
+        {
+            SetSelectedTab(Tab.PlacePin);
+            _isPlacingPin = true;
+            PlacingPinBanner.IsVisible = true;
+        }
+        else
+        {
+            OnMapTabClicked(sender, e);
+        }
+            
+    }
+
+    /// <summary>
+    /// Displays a popup dialog to confirm the placement of a pollution pin at the pending location when the map is
+    /// clicked.
+    /// </summary>
+    /// <remarks>If the user confirms the pin placement, a new pollution pin is created and the map tab is
+    /// refreshed. If the user cancels, the pin placement process is reset and the placement banner is shown. This
+    /// method should be called in response to a map click event when a pin placement is pending.</remarks>
+    /// <param name="sender">The source of the event, typically the map control that was clicked.</param>
+    /// <param name="e">The event data containing information about the map click location.</param>
     private async void ShowPinConfirmationPopup(object? sender, MapClickedEventArgs e)
     {
         if (_pendingPinLocation == null) return;
@@ -210,7 +365,14 @@ public partial class MapPage : ContentPage
     // ──────────────────────────────────────────────
     // Create pin via API
     // ──────────────────────────────────────────────
-
+    /// <summary>
+    /// Creates a new pollution pin based on the specified confirmation result and submits it to the server
+    /// asynchronously.
+    /// </summary>
+    /// <remarks>Displays a notification to the user indicating success or failure. If the user is not logged
+    /// in or the pin location is not set, the operation is not performed.</remarks>
+    /// <param name="result">The result of the pin confirmation dialog containing pollution details to be reported.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task CreatePollutionPinAsync(PinConfirmationPopup.PinConfirmationResult result)
     {
         if (_pendingPinLocation == null) return;
@@ -222,7 +384,7 @@ public partial class MapPage : ContentPage
             return;
         }
 
-            var (lon, lat) = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y);
+        var (lon, lat) = SphericalMercator.ToLonLat(_pendingPinLocation.X, _pendingPinLocation.Y);
 
         var dto = new PinCreateDto
         {
@@ -240,6 +402,15 @@ public partial class MapPage : ContentPage
             var createdPin = await _apiClient.PinPOSTAsync(dto);
             AddPinFeatureToLayer(createdPin);
             MainMap.Map.Refresh();
+
+            // Refresh monitoring so the new pin is included but filtered correctly.
+            var allPins = _pinLayer.Features
+                .OfType<GeometryFeature>()
+                .Select(f => f["Pin"] as Pin)
+                .Where(p => p != null)
+                .Cast<Pin>();
+            _proximityService.StartMonitoring(allPins, currentUserId);
+
             await AppShell.DisplaySnackbarAsync("Pin reported successfully!");
         }
         catch (Exception ex)
@@ -255,7 +426,10 @@ public partial class MapPage : ContentPage
     // ──────────────────────────────────────────────
     // Map rendering helpers
     // ──────────────────────────────────────────────
-
+    /// <summary>
+    /// Adds a pin as a feature to the map layer, with styling based on its status and info for popups.
+    /// </summary>
+    /// <param name="pin"></param>
     private void AddPinFeatureToLayer(Pin pin)
     {
         var point = SphericalMercator.FromLonLat(pin.Longitude, pin.Latitude);
@@ -432,9 +606,7 @@ public partial class MapPage : ContentPage
     }
 
     private async void OnMenuBackClicked(object? sender, EventArgs e)
-    {
-        await NavigateToMainMenuAsync();
-    }
+        => await NavigateToMainMenuAsync();
 
     private async Task NavigateToMainMenuAsync()
     {
@@ -463,7 +635,6 @@ public partial class MapPage : ContentPage
     // ──────────────────────────────────────────────
     // Theme toggle (inside drawer)
     // ──────────────────────────────────────────────
-
     private void OnLightThemeTapped(object? sender, TappedEventArgs e)
     {
         Application.Current!.UserAppTheme = AppTheme.Light;
@@ -481,26 +652,22 @@ public partial class MapPage : ContentPage
     /// </summary>
     private void UpdateThemeHighlight()
     {
-        // Determine current effective theme
+        // Determine active theme considering both system and user preference
         var userTheme = Application.Current?.UserAppTheme;
         bool isLight = userTheme == AppTheme.Light
             || (userTheme != AppTheme.Dark && Application.Current?.RequestedTheme == AppTheme.Light);
 
-        // Active card: brand green background, white text
-        // Inactive card: subtle tinted background, default text
-        var activeColor   = Microsoft.Maui.Graphics.Color.FromArgb("#3B6D11");
-        var inactiveLightColor = Microsoft.Maui.Graphics.Color.FromArgb("#F5F5F5");
-        var inactiveDarkColor  = Microsoft.Maui.Graphics.Color.FromArgb("#2C2C2C");
-        bool isDarkMode = Application.Current?.RequestedTheme == AppTheme.Dark
-                       || Application.Current?.UserAppTheme == AppTheme.Dark;
+        bool isDark = Application.Current?.RequestedTheme == AppTheme.Dark
+                     || Application.Current?.UserAppTheme == AppTheme.Dark;
 
-        var inactiveColor = isDarkMode ? inactiveDarkColor : inactiveLightColor;
-        var inactiveText  = isDarkMode ? Colors.White : Microsoft.Maui.Graphics.Color.FromArgb("#333333");
-        var activeText    = Colors.White;
+        // Colors (same as in XAML)
+        var active = Microsoft.Maui.Graphics.Color.FromArgb("#3B6D11");
+        var inactiveLight = Microsoft.Maui.Graphics.Color.FromArgb("#F5F5F5");
+        var inactiveDark = Microsoft.Maui.Graphics.Color.FromArgb("#2C2C2C");
+        var inactive = isDark ? inactiveDark : inactiveLight;
 
-        LightThemeCard.BackgroundColor  = isLight ? activeColor   : inactiveColor;
-
-        DarkThemeCard.BackgroundColor   = isLight ? inactiveColor : activeColor;
+        LightThemeCard.BackgroundColor = isLight ? active : inactive;
+        DarkThemeCard.BackgroundColor = isLight ? inactive : active;
     }
 
     // ──────────────────────────────────────────────
@@ -509,6 +676,7 @@ public partial class MapPage : ContentPage
     private async void OnSignOutClicked(object? sender, EventArgs e)
     {
         // Clear session and stored credentials
+        _proximityService.StopMonitoring();
         _userSession.Clear();
         _credentialService.ClearCredentials();
 

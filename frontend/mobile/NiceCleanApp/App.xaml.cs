@@ -20,9 +20,19 @@ public partial class App : Application
     {
         base.OnStart();
 
-        // Set status bar color and style
-        CommunityToolkit.Maui.Core.Platform.StatusBar.SetColor(Color.FromArgb("#333B6D11"));
-        CommunityToolkit.Maui.Core.Platform.StatusBar.SetStyle(StatusBarStyle.LightContent);
+        // Set status bar color and style on supported platforms
+        if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS() || OperatingSystem.IsMacCatalyst())
+        {
+            try
+            {
+                CommunityToolkit.Maui.Core.Platform.StatusBar.SetColor(Color.FromArgb("#333B6D11"));
+                CommunityToolkit.Maui.Core.Platform.StatusBar.SetStyle(StatusBarStyle.LightContent);
+            }
+            catch (NotSupportedException)
+            {
+                // Platform doesn't support changing the status bar — ignore
+            }
+        }
 
         // Get services
         var services = Windows[0].Page?.Handler?.MauiContext?.Services;
