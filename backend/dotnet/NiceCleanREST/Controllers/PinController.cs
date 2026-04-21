@@ -57,6 +57,23 @@ public class PinController : ControllerBase
         return Ok(pin);
     }
 
+    // GET api/<PinController>/5/hasVoted/2
+    [HttpGet("{pinId}/hasVoted/{userId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<bool> HasUserVoted(int pinId, int userId)
+    {
+        var pin = _pinRepo.GetById(pinId);
+        if (pin == null)
+        {
+            return NotFound("Pin not found.");
+        }
+
+        bool cannotVote = pin.UserId == userId || _voteRepo.HasUserVoted(pinId, userId);
+
+        return Ok(cannotVote);
+    }
+
     // POST api/<PinController>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
