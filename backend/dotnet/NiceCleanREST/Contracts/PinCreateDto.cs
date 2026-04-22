@@ -2,11 +2,12 @@
 
 namespace NiceCleanREST.Contracts;
 
-public class PinUpdateDto
+public class PinCreateDto
 {
     public PollutionSeverity Severity { get; set; }
     public PollutionType PollutionType { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public string LocationName { get; set; } = string.Empty;
+    public int UserId { get; set; }
 }

@@ -1,4 +1,5 @@
 ﻿using NiceCleanLib.Data;
+using NiceCleanLib.Enums;
 using NiceCleanLib.Models;
 using NiceCleanLib.Services.Interfaces;
 using System;
@@ -65,4 +66,34 @@ public class PinRepositoryDB : IPinRepository
         return pin;
     }
 
+    public bool IsLocationOccupied(double latitude, double longitude)
+    {
+        var activePins = _context.Pins
+            .Where(p => p.Status != PinStatus.Deleted && p.Status != PinStatus.Cleaned)
+            .ToList();
+
+        foreach (var pin in activePins)
+        {
+            if (HaversineMeters(latitude, longitude, pin.Latitude, pin.Longitude) <= Pin.StandardRadiusMeters)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Helper method for distance calculation using Haversine formula. Used in IsLocationOccupied to check proximity of pins.
+    private static double HaversineMeters(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371000;
+        double dLat = ToRadians(lat2 - lat1);
+        double dLon = ToRadians(lon2 - lon1);
+        double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                   Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+                   Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c;
+    }
+
+    private static double ToRadians(double angle) => angle * Math.PI / 180.0;
 }

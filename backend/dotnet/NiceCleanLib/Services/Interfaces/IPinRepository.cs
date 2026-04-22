@@ -9,4 +9,5 @@ public interface IPinRepository
     List<Pin> GetAll();
     Pin? GetById(int id);
     Pin? Update(int id, Pin pin);
+    bool IsLocationOccupied(double latitude, double longitude);
 }
