@@ -66,7 +66,7 @@ public class PinRepositoryDB : IPinRepository
         return pin;
     }
 
-    public bool IsLocationOccupied(double latitude, double longitude)
+    public Pin? GetPinAtLocation(double latitude, double longitude)
     {
         var activePins = _context.Pins
             .Where(p => p.Status != PinStatus.Deleted && p.Status != PinStatus.Cleaned)
@@ -76,10 +76,16 @@ public class PinRepositoryDB : IPinRepository
         {
             if (HaversineMeters(latitude, longitude, pin.Latitude, pin.Longitude) <= Pin.StandardRadiusMeters)
             {
-                return true;
+                return pin;
             }
         }
-        return false;
+        return null;
+    }
+
+    public bool IsUserNear(double userLat, double userLon, double targetLat, double targetLon, double thresholdMeters)
+    {
+        double distance = HaversineMeters(userLat, userLon, targetLat, targetLon);
+        return distance <= thresholdMeters;
     }
 
     // Helper method for distance calculation using Haversine formula. Used in IsLocationOccupied to check proximity of pins.
