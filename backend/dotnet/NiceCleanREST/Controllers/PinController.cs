@@ -145,15 +145,17 @@ public class PinController : ControllerBase
             return BadRequest("Failed to register vote.");
         }
 
-        if (dto.VoteType == VoteType.Confirmed)
-        {
-            int confirmedCount = _voteRepo.GetVoteCount(id, VoteType.Confirmed);
+        int netScore = _voteRepo.GetVoteCount(id);
 
-            if (confirmedCount >= 3 && pin.Status == PinStatus.Unverified)
-            {
-                pin.Status = PinStatus.Verified;
-                _pinRepo.Update(id, pin);
-            }
+        if (netScore >= 3 && pin.Status == PinStatus.Unverified)
+        {
+            pin.Status = PinStatus.Verified;
+            _pinRepo.Update(id, pin);
+        }
+        else if (netScore <= -3 && pin.Status != PinStatus.Deleted)
+        {
+            pin.Status = PinStatus.Deleted;
+            _pinRepo.Update(id, pin);
         }
 
         return Ok(pin);

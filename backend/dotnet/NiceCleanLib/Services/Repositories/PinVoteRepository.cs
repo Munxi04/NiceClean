@@ -30,8 +30,13 @@ public class PinVoteRepository : IPinVoteRepository
         return _votes.Any(v => v.PinId == pinId && v.UserId == userId);
     }
 
-    public int GetVoteCount(int pinId, VoteType voteType)
+    public int GetVoteCount(int pinId)
     {
-        return _votes.Count(v => v.PinId == pinId && v.VoteType == voteType);
+        var pinVotes = _votes.Where(v => v.PinId == pinId);
+
+        int confirmed = pinVotes.Count(v => v.VoteType == VoteType.Confirmed);
+        int rejected = pinVotes.Count(v => v.VoteType == VoteType.Rejected);
+
+        return confirmed - rejected;
     }
 }

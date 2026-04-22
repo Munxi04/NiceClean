@@ -41,8 +41,11 @@ public class PinVoteRepositoryDB : IPinVoteRepository
         return _context.PinVotes.Any(v => v.PinId == pinId && v.UserId == userId);
     }
 
-    public int GetVoteCount(int pinId, VoteType voteType)
+    public int GetVoteCount(int pinId)
     {
-        return _context.PinVotes.Count(v => v.PinId == pinId && v.VoteType == voteType);
+        int confirmed = _context.PinVotes.Count(v => v.PinId == pinId && v.VoteType == VoteType.Confirmed);
+        int rejected = _context.PinVotes.Count(v => v.PinId == pinId && v.VoteType == VoteType.Rejected);
+
+        return confirmed - rejected;
     }
 }

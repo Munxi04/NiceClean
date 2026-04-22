@@ -10,5 +10,5 @@ public interface IPinVoteRepository
 {
     PinVote? AddVote(PinVote vote);
     bool HasUserVoted(int pinId, int userId);
-    int GetVoteCount(int pinId, VoteType voteType);
+    int GetVoteCount(int pinId);
 }
