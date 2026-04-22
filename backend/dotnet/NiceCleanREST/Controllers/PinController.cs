@@ -74,12 +74,28 @@ public class PinController : ControllerBase
         return Ok(cannotVote);
     }
 
-    // GET api/<PinController>/isLocationOccupied
-    [HttpGet("isLocationOccupied")]
+    // GET api/<PinController>/atLocation
+    [HttpGet("atLocation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<bool> IsLocationOccupied([FromQuery] double latitude, [FromQuery] double longitude)
+    public ActionResult<Pin> GetPinAtLocation([FromQuery] double latitude, [FromQuery] double longitude)
     {
-        return Ok(_pinRepo.IsLocationOccupied(latitude, longitude));
+        var pin = _pinRepo.GetPinAtLocation(latitude, longitude);
+
+        if (pin == null)
+        {
+            return NoContent();
+        }
+        return Ok(pin);
+    }
+
+    // GET api/<PinController>/isUserNear?userLat=55.6&userLon=12.5&targetLat=55.602&targetLon=12.502
+    [HttpGet("isUserNear")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult<bool> IsUserNear([FromQuery] double userLat, [FromQuery] double userLon, [FromQuery] double targetLat, [FromQuery] double targetLon)
+    {
+        bool isNear = _pinRepo.IsUserNear(userLat, userLon, targetLat, targetLon, Pin.StandardRadiusMeters);
+
+        return Ok(isNear);
     }
 
     // POST api/<PinController>
@@ -94,7 +110,7 @@ public class PinController : ControllerBase
             return BadRequest("User does not exist.");
         }
 
-        if (_pinRepo.IsLocationOccupied(dto.Latitude, dto.Longitude))
+        if (_pinRepo.GetPinAtLocation(dto.Latitude, dto.Longitude) != null)
         {
             return BadRequest("A pin already exists within 100 meters of this location.");
         }
