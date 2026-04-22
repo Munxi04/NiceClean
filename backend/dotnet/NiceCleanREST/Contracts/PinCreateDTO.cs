@@ -10,5 +10,4 @@ public class PinCreateDto
     public double Longitude { get; set; }
     public string LocationName { get; set; } = string.Empty;
     public int UserId { get; set; }
-    public double Radius { get; set; } = 100.0;
 }
