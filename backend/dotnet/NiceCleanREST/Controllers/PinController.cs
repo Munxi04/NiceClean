@@ -77,6 +77,7 @@ public class PinController : ControllerBase
     // GET api/<PinController>/atLocation
     [HttpGet("atLocation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public ActionResult<Pin> GetPinAtLocation([FromQuery] double latitude, [FromQuery] double longitude)
     {
         var pin = _pinRepo.GetPinAtLocation(latitude, longitude);
@@ -101,6 +102,7 @@ public class PinController : ControllerBase
     // POST api/<PinController>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<Pin> Post([FromBody] PinCreateDto dto)
     {
         var user = _userRepo.GetById(dto.UserId);
