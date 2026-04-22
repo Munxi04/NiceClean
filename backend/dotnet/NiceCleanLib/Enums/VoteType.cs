@@ -6,5 +6,6 @@ namespace NiceCleanLib.Enums;
 
 public enum VoteType
 {
-    Confirmed
+    Confirmed,
+    Rejected
 }

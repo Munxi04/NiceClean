@@ -7,6 +7,8 @@ namespace NiceCleanLib.Models;
 
 public class Pin
 {
+    public const double StandardRadiusMeters = 100.0;
+
     public int Id { get; set; }
     public int UserId { get; set; }
     public DateTime CreationDate { get; set; }

@@ -74,12 +74,30 @@ public class PinController : ControllerBase
         return Ok(cannotVote);
     }
 
+    // GET api/<PinController>/isLocationOccupied
+    [HttpGet("isLocationOccupied")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult<bool> IsLocationOccupied([FromQuery] double latitude, [FromQuery] double longitude)
+    {
+        return Ok(_pinRepo.IsLocationOccupied(latitude, longitude));
+    }
+
     // POST api/<PinController>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public ActionResult<Pin> Post([FromBody] PinCreateDto dto)
     {
         var user = _userRepo.GetById(dto.UserId);
+
+        if (user == null)
+        {
+            return BadRequest("User does not exist.");
+        }
+
+        if (_pinRepo.IsLocationOccupied(dto.Latitude, dto.Longitude))
+        {
+            return BadRequest("A pin already exists within 100 meters of this location.");
+        }
 
         var isTrusted = (user?.NumberOfWalks ?? 0) >= WalksThresholdForVerify || (user?.IsVerified ?? false);
 
@@ -90,7 +108,7 @@ public class PinController : ControllerBase
             userId: dto.UserId,
             creationDate: DateTime.UtcNow,
             severity: dto.Severity,
-            radius: dto.Radius,
+            radius: Pin.StandardRadiusMeters,
             status: initialStatus,
             pollutionType: dto.PollutionType,
             latitude: dto.Latitude,
@@ -145,15 +163,17 @@ public class PinController : ControllerBase
             return BadRequest("Failed to register vote.");
         }
 
-        if (dto.VoteType == VoteType.Confirmed)
-        {
-            int confirmedCount = _voteRepo.GetVoteCount(id, VoteType.Confirmed);
+        int netScore = _voteRepo.GetVoteCount(id);
 
-            if (confirmedCount >= 3 && pin.Status == PinStatus.Unverified)
-            {
-                pin.Status = PinStatus.Verified;
-                _pinRepo.Update(id, pin);
-            }
+        if (netScore >= 3 && pin.Status == PinStatus.Unverified)
+        {
+            pin.Status = PinStatus.Verified;
+            _pinRepo.Update(id, pin);
+        }
+        else if (netScore <= -3 && pin.Status != PinStatus.Deleted)
+        {
+            pin.Status = PinStatus.Deleted;
+            _pinRepo.Update(id, pin);
         }
 
         return Ok(pin);
@@ -173,7 +193,6 @@ public class PinController : ControllerBase
         }
 
         existingPin.Severity = dto.Severity;
-        existingPin.Radius = dto.Radius;
         existingPin.PollutionType = dto.PollutionType;
         existingPin.Latitude = dto.Latitude;
         existingPin.Longitude = dto.Longitude;
