@@ -49,7 +49,7 @@
                     Clicked="OnCloseClicked" />
             </Grid>
 
-            <!-- ── Body ── -->
+            <!-- Body -->
             <VerticalStackLayout Padding="20,14" Spacing="12">
 
                 <!-- Status badge -->
@@ -86,12 +86,6 @@
                            FontSize="13" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}" />
 
-                    <Label Grid.Row="2" Grid.Column="0" Text="Radius"
-                           FontSize="13" TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}" />
-                    <Label Grid.Row="2" Grid.Column="1" x:Name="RadiusLabel"
-                           FontSize="13" FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}" />
-
                     <Label Grid.Row="3" Grid.Column="0" Text="Reported"
                            FontSize="13" TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}" />
                     <Label Grid.Row="3" Grid.Column="1" x:Name="DateLabel"
@@ -99,30 +93,11 @@
                            TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}" />
                 </Grid>
 
-                <BoxView HeightRequest="1" Color="#22000000" />
-
-                <!-- Proximity callout -->
-                <Border
-                    BackgroundColor="#FFF8E7"
-                    StrokeShape="RoundRectangle 8"
-                    StrokeThickness="0"
-                    Padding="12,8">
-                    <HorizontalStackLayout Spacing="8">
-                        <Label Text="📍" FontSize="16" VerticalOptions="Center" />
-                        <Label
-                            Text="You are nearby this pollution spot. Can you confirm its current state?"
-                            FontSize="12"
-                            TextColor="#7A5800"
-                            LineBreakMode="WordWrap"
-                            HorizontalOptions="Fill" />
-                    </HorizontalStackLayout>
-                </Border>
-
                 <!-- Action buttons -->
                 <!-- "Still here" button — always shown for Unverified pins -->
                 <Button
                     x:Name="VerifyButton"
-                    Text="✅  Still here — Confirm"
+                    Text="✅ Still here"
                     BackgroundColor="#3B6D11"
                     TextColor="White"
                     CornerRadius="8"
@@ -134,7 +109,7 @@
                 <!-- "Cleaned" button — always shown -->
                 <Button
                     x:Name="CleanedButton"
-                    Text="🧹  Area is now clean"
+                    Text="🧹 Area cleaned"
                     BackgroundColor="#1A5276"
                     TextColor="White"
                     CornerRadius="8"

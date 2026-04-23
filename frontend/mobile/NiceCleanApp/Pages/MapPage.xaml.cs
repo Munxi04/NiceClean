@@ -81,6 +81,8 @@ public partial class MapPage : ContentPage
             Layers = { OpenStreetMap.CreateTileLayer(), _pinLayer }
         };
 
+        MainMap.MyLocationEnabled = true;
+
         MainMap.Map.Widgets.Add(new ZoomInOutWidget { Margin = new MRect(0, 0, 20, 40) });
         MainMap.Map.Widgets.Add(new ScaleBarWidget(MainMap.Map)
         {
@@ -89,8 +91,6 @@ public partial class MapPage : ContentPage
             VerticalAlignment = VerticalAlignment.Top
         });
 
-        // Show user's current location as a blue dot with accuracy circle
-        MainMap.Map.Layers.Add(new MyLocationLayer(MainMap.Map));
         // Centre on Nice, France
         var nice = SphericalMercator.FromLonLat(7.2620, 43.7102);
         MainMap.Map.Navigator.CenterOnAndZoomTo(new MPoint(nice), 12);
@@ -110,8 +110,19 @@ public partial class MapPage : ContentPage
             UpdateThemeHighlight();
             SetSelectedTab(Tab.Map);
 
+            var location = await Geolocation.GetLastKnownLocationAsync();
+
+            if (location != null)
+            {
+                MainMap.MyLocationLayer.UpdateMyLocation(new Position(location.Latitude, location.Longitude), true);
+
+                // Focus the map on this location if needed
+                // MainMap.Map.Navigator.CenterOnAndZoomTo(new MPoint(location.Latitude, location.Longitude), 12);
+            }
+
             _pollCts = new CancellationTokenSource();
             _ = PollPinsAsync(_pollCts.Token);
+            _ = PollUserLocationAsync(_pollCts.Token);
         }
         catch (Exception ex)
         {
@@ -125,7 +136,6 @@ public partial class MapPage : ContentPage
     {
         base.OnDisappearing();
         _pollCts?.Cancel();
-        Geolocation.StopListeningForeground();
 
         // Keep monitoring alive in background via the platform service;
         // only pause the in-app popup logic. The background service / iOS
@@ -141,6 +151,26 @@ public partial class MapPage : ContentPage
             await Task.Delay(TimeSpan.FromSeconds(1), ct).ContinueWith(_ => { }); // swallow cancellation
             if (!ct.IsCancellationRequested)
                 await LoadExistingPinsAsync();
+        }
+    }
+
+    private async Task PollUserLocationAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                var location = await Geolocation.GetLastKnownLocationAsync();
+                if (location != null)
+                {
+                    MainMap.MyLocationLayer.UpdateMyLocation(new Position(location.Latitude, location.Longitude), true);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error polling location: {ex}");
+            }
+            await Task.Delay(TimeSpan.FromSeconds(5));
         }
     }
 
@@ -248,71 +278,73 @@ public partial class MapPage : ContentPage
     }
 
     // ──────────────────────────────────────────────
-    // Hit-testing: find a pin near the clicked point (within 20 screen pixels)
-    // ──────────────────────────────────────────────
-    /// <summary>
-    /// Finds the first pin located within a 20-pixel radius of the specified world point.
-    /// </summary>
-    /// <remarks>The search radius is dynamically calculated based on the current map zoom level to correspond
-    /// to 20 screen pixels. This method is typically used for hit-testing in interactive map scenarios.</remarks>
-    /// <param name="worldPoint">The location in world coordinates to test for proximity to pins.</param>
-    /// <returns>A pin that is within 20 screen pixels of the specified point; otherwise, null if no pin is found nearby.</returns>
-    private Pin? FindPinAtPoint(MPoint worldPoint)
-    {
-        // Convert 20 screen pixels → world units using current zoom level
-        double tolerance = MainMap.Map.Navigator.Viewport.Resolution * 20;
-
-        foreach (var feature in _pinLayer.Features)
-        {
-            if (feature is GeometryFeature gf
-                && gf.Geometry is NetTopologySuite.Geometries.Point pt
-                && feature["Pin"] is Pin pin)
-            {
-                double dx = pt.X - worldPoint.X;
-                double dy = pt.Y - worldPoint.Y;
-                if (Math.Sqrt(dx * dx + dy * dy) < tolerance)
-                    return pin;
-            }
-        }
-
-        return null;
-    }
-
-    // ──────────────────────────────────────────────
     // Map click handler
     // ──────────────────────────────────────────────
-    private void OnMapClicked(object? sender, MapClickedEventArgs e)
+    private async void OnMapClicked(object? sender, MapClickedEventArgs e)
     {
         var clickPoint = e.Point.ToMapsui();
+        var userLocation = await Geolocation.GetLastKnownLocationAsync();
+        var (lon, lat) = SphericalMercator.ToLonLat(clickPoint.X, clickPoint.Y);
+        bool isUserNearby = userLocation != null 
+            && await _apiClient.IsUserNearAsync(userLocation.Latitude, userLocation.Longitude, lat, lon);
+        Pin? nearPin = null;
+        try
+        {
+            nearPin = await _apiClient.AtLocationAsync(lat, lon);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 204)
+        {
+            // No pin near the clicked location
+        }
 
-        // If we're in "placing pin" mode, the click sets the pending pin location and shows the confirmation popup
-        if (_isPlacingPin)
+            // If we're in "placing pin" mode, the click sets the pending pin location and shows the confirmation popup
+        if (_isPlacingPin && isUserNearby && nearPin == null)
         {
             _pendingPinLocation = clickPoint;
             _isPlacingPin = false;
             PlacingPinBanner.IsVisible = false;
+            TooNearBanner.IsVisible = false;
+            TooFarBanner.IsVisible = false;
             ShowPinReportPopup(sender, e);
+            return;
+        }
+        else if (_isPlacingPin && !isUserNearby)
+        {
+            PlacingPinBanner.IsVisible = false;
+            TooFarBanner.IsVisible = true;
+            TooNearBanner.IsVisible = false;
+            return;
+        }
+        else if (_isPlacingPin && nearPin != null)
+        {
+            PlacingPinBanner.IsVisible = false;
+            TooFarBanner.IsVisible = false;
+            TooNearBanner.IsVisible = true;
             return;
         }
 
         // Otherwise, check if the click hit an existing pin and show its info popup
-        var hit = FindPinAtPoint(clickPoint);
-        if (hit != null)
+        if (nearPin != null)
         {
             var userId = _userSession.CurrentUser?.Id ?? -1;
 
             // If the tapped pin belongs to another user and is actionable,
             // show the validation popup directly (user tapped intentionally).
-            if (hit.UserId != userId
-                && hit.Status != PinStatus.Cleaned
-                && hit.Status != PinStatus.Deleted)
+            if (nearPin.UserId != userId
+                && nearPin.Status != PinStatus.Cleaned
+                && nearPin.Status != PinStatus.Deleted
+                && isUserNearby)
             {
-                ShowValidationPopup(hit);
+                ShowValidationPopup(nearPin);
+            }
+            else if (nearPin.UserId != userId && !isUserNearby)
+            {
+                var popup = new PinInfoPopup(nearPin, !isUserNearby);
+                this.ShowPopup(popup);
             }
             else
             {
-                // Own pin or already resolved — just show info.
-                var popup = new PinInfoPopup(hit);
+                var popup = new PinInfoPopup(nearPin, false);
                 this.ShowPopup(popup);
             }
         }
@@ -336,6 +368,8 @@ public partial class MapPage : ContentPage
             SetSelectedTab(Tab.PlacePin);
             _isPlacingPin = true;
             PlacingPinBanner.IsVisible = true;
+            TooFarBanner.IsVisible = false;
+            TooNearBanner.IsVisible = false;
         }
         else
         {
@@ -402,7 +436,6 @@ public partial class MapPage : ContentPage
         {
             UserId = currentUserId,
             Severity = result.Severity,
-            Radius = 100.0,
             PollutionType = result.Type,
             Latitude = lat,
             Longitude = lon,
@@ -512,7 +545,7 @@ public partial class MapPage : ContentPage
         _selectedTab = selected;
 
         // Helper to style a button
-        void StyleButton(Button btn, bool isSelected)
+        static void StyleButton(Button btn, bool isSelected)
         {
             if (isSelected)
             {

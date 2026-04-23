@@ -56,16 +56,17 @@ public partial class PinValidationPopup : Popup
             PollutionSeverity.Moderate => "🟡 Moderate",
             PollutionSeverity.High     => "🟠 High",
             PollutionSeverity.VeryHigh => "🔴 Very High",
-            PollutionSeverity.Extreme  => "💀 Extreme",
+            PollutionSeverity.Extreme  => "⚠️ Extreme",
             _                          => pin.Severity.ToString()
         };
-        RadiusLabel.Text = $"{pin.Radius:F0} m";
+
         DateLabel.Text   = pin.CreationDate.LocalDateTime.ToString("dd MMM yyyy, HH:mm");
 
-        // Hide "Confirm still here" for pins that are already Verified —
-        // there's nothing left to confirm; the user can only mark it cleaned.
-        VerifyButton.IsVisible = _apiClient.HasVotedAsync(pin.Id, _currentUserId).Result == false
-            && pin.Status != PinStatus.Verified;
+        // "Confirm still here" is additionally gated on: not already Verified
+        // and the user hasn't already voted.
+        bool alreadyVerified = pin.Status == PinStatus.Verified;
+        VerifyButton.IsVisible = !alreadyVerified
+            && _apiClient.HasVotedAsync(pin.Id, _currentUserId).Result == false;
     }
 
     // ──────────────────────────────────────────────

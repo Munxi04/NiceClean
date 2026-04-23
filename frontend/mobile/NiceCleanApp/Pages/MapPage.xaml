@@ -34,6 +34,64 @@
                 HorizontalOptions="Center" />
         </Border>
 
+        <!-- Too-far banner (hidden by default) -->
+        <Border
+            x:Name="TooFarBanner"
+            Grid.Row="0"
+            BackgroundColor="#CC000000"
+            IsVisible="False"
+            VerticalOptions="Start"
+            Margin="16,52,16,0"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="0"
+            Padding="0,8">
+            <HorizontalStackLayout>
+                <Label Text="📍" FontSize="16" VerticalOptions="Center" Padding="28,0" />
+                <VerticalStackLayout>
+                    <Label
+                        Text="You must be within 100 meters of"
+                        TextColor="White"
+                        FontSize="14"
+                        HorizontalOptions="Center"/>
+                    <Label
+                        Text="the location to place a pin there."
+                        TextColor="White"
+                        FontSize="14"
+                        HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+                <Label Text="📍" FontSize="16" VerticalOptions="Center" Padding="28,0" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Too-near banner (hidden by default) -->
+        <Border
+            x:Name="TooNearBanner"
+            Grid.Row="0"
+            BackgroundColor="#CC000000"
+            IsVisible="False"
+            VerticalOptions="Start"
+            Margin="16,52,16,0"
+            StrokeShape="RoundRectangle 10"
+            StrokeThickness="0"
+            Padding="0,8">
+            <HorizontalStackLayout>
+                <Label Text="📍" FontSize="16" VerticalOptions="Center" Padding="28,0" />
+                <VerticalStackLayout>
+                    <Label
+                        Text="There's already a pin in this area."
+                        TextColor="White"
+                        FontSize="14"
+                        HorizontalOptions="Center"/>
+                    <Label
+                        Text="The next step is to make an event!"
+                        TextColor="White"
+                        FontSize="14"
+                        HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+                <Label Text="📍" FontSize="16" VerticalOptions="Center" Padding="28,0" />
+            </HorizontalStackLayout>
+        </Border>
+
         <!-- Bottom tab bar -->
         <Border
             Grid.Row="1"
@@ -328,7 +386,6 @@
                                 HeightRequest="44"
                                 FontSize="14"
                                 Clicked="OnDeleteAccountClicked" />
-
                         </VerticalStackLayout>
                     </Grid>
                 </Grid>

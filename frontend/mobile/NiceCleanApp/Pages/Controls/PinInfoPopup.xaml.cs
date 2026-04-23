@@ -7,9 +7,10 @@ namespace NiceCleanApp.Pages.Controls;
 
 public partial class PinInfoPopup : Popup
 {
-    public PinInfoPopup(Pin pin)
+    public PinInfoPopup(Pin pin, bool isTooFar)
     {
         InitializeComponent();
+        TooFarBanner.IsVisible = isTooFar;
         Populate(pin);
     }
 
@@ -39,11 +40,10 @@ public partial class PinInfoPopup : Popup
             PollutionSeverity.Moderate => "🟡 Moderate",
             PollutionSeverity.High     => "🟠 High",
             PollutionSeverity.VeryHigh => "🔴 Very High",
-            PollutionSeverity.Extreme  => "💀 Extreme",
+            PollutionSeverity.Extreme  => "⚠️ Extreme",
             _                          => pin.Severity.ToString()
         };
 
-        RadiusLabel.Text = $"{pin.Radius:F0} m";
         DateLabel.Text   = pin.CreationDate.LocalDateTime.ToString("dd MMM yyyy, HH:mm");
     }
 
