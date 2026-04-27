@@ -45,6 +45,23 @@ public class EventController : ControllerBase
         return Ok(ev);
     }
 
+    // GET api/<EventController>/5/hasJoined/2
+    [HttpGet("{eventId}/hasJoined/{userId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<bool> HasUserJoined(int eventId, int userId)
+    {
+        var ev = _eventRepo.GetById(eventId);
+        if (ev == null)
+        {
+            return NotFound("Event not found.");
+        }
+
+        bool hasJoined = _eventRepo.HasUserJoined(eventId, userId);
+
+        return Ok(hasJoined);
+    }
+
     // POST api/<EventController>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -56,6 +73,7 @@ public class EventController : ControllerBase
 
         var pin = _pinRepo.GetById(dto.PinId);
         if (pin == null) return BadRequest("The specified pin does not exist.");
+        if (pin.HasEvent) return BadRequest("This pin already has an active event.");
 
         var newEvent = new Event(
             eventId: 0,
@@ -66,6 +84,9 @@ public class EventController : ControllerBase
         );
 
         var created = _eventRepo.Add(newEvent);
+
+        pin.HasEvent = true;
+        _pinRepo.Update(pin.Id, pin);
 
         // Automatically add the host as a participant
         _eventRepo.AddParticipant(created.EventId, hostUser.Id);

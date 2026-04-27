@@ -25,7 +25,8 @@ public class PinRepository : IPinRepository
             pollutionType: PollutionType.Plastic,
             latitude: 43.6950,
             longitude: 7.2586,
-            locationName: "Promenade des Anglais"
+            locationName: "Promenade des Anglais",
+            hasEvent: false
         ));
 
         Add(new Pin(
@@ -38,7 +39,8 @@ public class PinRepository : IPinRepository
             pollutionType: PollutionType.Furniture,
             latitude: 43.7034,
             longitude: 7.2663,
-            locationName: "Avenue Jean Médecin Area"
+            locationName: "Avenue Jean Médecin Area",
+            hasEvent: false
         ));
 
         Add(new Pin(
@@ -51,7 +53,8 @@ public class PinRepository : IPinRepository
             pollutionType: PollutionType.Glass,
             latitude: 43.6967,
             longitude: 7.2755,
-            locationName: "Vieux Nice"
+            locationName: "Vieux Nice",
+            hasEvent: false
         ));
     }
 

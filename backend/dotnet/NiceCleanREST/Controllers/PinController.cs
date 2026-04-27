@@ -131,7 +131,8 @@ public class PinController : ControllerBase
             pollutionType: dto.PollutionType,
             latitude: dto.Latitude,
             longitude: dto.Longitude,
-            locationName: dto.LocationName
+            locationName: dto.LocationName,
+            hasEvent: false
         );
 
         var created = _pinRepo.Add(pin);
