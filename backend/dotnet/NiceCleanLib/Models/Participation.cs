@@ -11,15 +11,18 @@ namespace NiceCleanLib.Models
         public bool IsParticipating { get; set; }
         public int EventId { get; set; }
         public int UserId { get; set; }
+        public DateTime JoinDate { get; set; }
 
+        public Participation() { } 
 
-        public Participation(int participationId, int userId, int eventId, bool isParticipating)
+        public Participation(int participationId, int userId, int eventId, bool isParticipating, DateTime joinDate)
         {
             ParticipationId = participationId;
             UserId = userId;
             EventId = eventId;
             IsParticipating = isParticipating;
-        }
+            JoinDate = joinDate;
 
+        }
     }
 }

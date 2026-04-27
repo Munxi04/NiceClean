@@ -32,6 +32,7 @@ builder.Services.AddDbContext<NiceCleanDbContext>(options =>
 builder.Services.AddSingleton<IPinRepository, PinRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IPinVoteRepository, PinVoteRepository>();
+builder.Services.AddSingleton<IEventRepository, EventRepository>();
 
 //CORS
 builder.Services.AddCors(options =>

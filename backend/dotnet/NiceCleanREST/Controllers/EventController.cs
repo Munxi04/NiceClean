@@ -1,0 +1,115 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using NiceCleanLib.Enums;
+using NiceCleanLib.Models;
+using NiceCleanLib.Services.Interfaces;
+using NiceCleanREST.Contracts;
+
+namespace NiceCleanREST.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class EventController : ControllerBase
+{
+    private readonly IEventRepository _eventRepo;
+    private readonly IPinRepository _pinRepo;
+    private readonly IUserRepository _userRepo;
+
+    public EventController(IEventRepository eventRepo, IPinRepository pinRepo, IUserRepository userRepo)
+    {
+        _eventRepo = eventRepo;
+        _pinRepo = pinRepo;
+        _userRepo = userRepo;
+    }
+
+    // GET: api/<EventController>
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public ActionResult<IEnumerable<Event>> Get()
+    {
+        var result = _eventRepo.GetAll();
+        if (!result.Any()) return NoContent();
+
+        return Ok(result);
+    }
+
+    // GET api/<EventController>/5
+    [HttpGet("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<Event> GetById(int id)
+    {
+        var ev = _eventRepo.GetById(id);
+        if (ev == null) return NotFound();
+
+        return Ok(ev);
+    }
+
+    // POST api/<EventController>
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<Event> Post([FromBody] EventCreateDto dto)
+    {
+        var hostUser = _userRepo.GetById(dto.HostUserId);
+        if (hostUser == null) return BadRequest("Host user does not exist.");
+
+        var pin = _pinRepo.GetById(dto.PinId);
+        if (pin == null) return BadRequest("The specified pin does not exist.");
+
+        var newEvent = new Event(
+            eventId: 0,
+            date: dto.StartTime,
+            eventStatus: EventStatus.Pending,
+            hostUserId: dto.HostUserId,
+            pinId: dto.PinId
+        );
+
+        var created = _eventRepo.Add(newEvent);
+
+        // Automatically add the host as a participant
+        _eventRepo.AddParticipant(created.EventId, hostUser.Id);
+
+        return CreatedAtAction(nameof(GetById), new { id = created.EventId }, created);
+    }
+
+    // POST api/<EventController>/5/join
+    [HttpPost("{id}/join")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<Participation> JoinEvent(int id, [FromBody] ParticipationDto dto)
+    {
+        var ev = _eventRepo.GetById(id);
+        if (ev == null) return NotFound("Event not found.");
+
+        if (ev.EventStatus == EventStatus.Ended) return BadRequest("Cannot join an event that has already ended.");
+
+        var user = _userRepo.GetById(dto.UserId);
+        if (user == null) return BadRequest("User does not exist.");
+
+        if (_eventRepo.HasUserJoined(id, dto.UserId)) return BadRequest("User has already joined this event.");
+
+        var participation = _eventRepo.AddParticipant(id, dto.UserId);
+        if (participation == null) return BadRequest("Failed to join event.");
+
+        return Ok(participation);
+    }
+
+    // PUT api/<EventController>/5/status
+    [HttpPut("{id}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<Event> UpdateStatus(int id, [FromQuery] EventStatus status, [FromQuery] int hostUserId)
+    {
+        var ev = _eventRepo.GetById(id);
+        if (ev == null) return NotFound("Event not found.");
+
+        if (ev.HostUserId != hostUserId) return BadRequest("Only the host can update the event status.");
+
+        var updatedEv = _eventRepo.UpdateStatus(id, status);
+
+        return Ok(updatedEv);
+    }
+}
