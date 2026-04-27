@@ -1,35 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Background -->
-  <rect width="512" height="512" fill="#FAFAF8" />
+	<!-- Background -->
+	<rect width="512" height="512" fill="#FAFAF8" />
 
-  <!-- Soft green glow behind icon -->
-  <circle cx="256" cy="220" r="180" fill="#97C459" opacity="0.08" />
+	<!-- Soft green glow behind icon -->
+	<circle cx="256" cy="220" r="180" fill="#97C459" opacity="0.08" />
 
-  <!-- App Icon (Leaf) -->
-  <g transform="translate(256, 210) scale(5.6) translate(-14, -14)">
-    <!-- Leaf body -->
-    <path d="M14 3C14 3 5 8 5 16C5 20.4 9.1 24 14 24C18.9 24 23 20.4 23 16C23 8 14 3 14 3Z"
-          fill="#97C459" />
-    <!-- Central vein -->
-    <path d="M14 24V12" stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
-    <!-- Left vein -->
-    <path d="M14 12C14 12 10 15 9 19" stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
-    <!-- Right vein -->
-    <path d="M14 12C14 12 18 15 19 19" stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
-  </g>
+	<!-- App Icon (Leaf) -->
+	<g transform="translate(256, 210) scale(5.6) translate(-14, -14)">
+		<!-- Leaf body -->
+		<path d="M14 3C14 3 5 8 5 16C5 20.4 9.1 24 14 24C18.9 24 23 20.4 23 16C23 8 14 3 14 3Z"
+			  fill="#97C459" />
+		<!-- Central vein -->
+		<path d="M14 24V12" stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
+		<!-- Left vein -->
+		<path d="M14 12C14 12 10 15 9 19" stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
+		<!-- Right vein -->
+		<path d="M14 12C14 12 18 15 19 19" stroke="#3B6D11" stroke-width="0.8" stroke-linecap="round" />
+	</g>
 
-  <!-- App Name -->
-  <g transform="translate(256, 320)">
-    <text x="0" y="0" text-anchor="middle"
-          font-family="InstrumentSerif, Georgia, serif" font-size="42" fill="#1A1A1A"
-          letter-spacing="-0.5">
-      <tspan>Nice</tspan><tspan font-family="InstrumentSerifItalic, Georgia, serif" font-style="italic" fill="#3B6D11">Clean</tspan>
-    </text>
-  </g>
+	<!-- App Name -->
+	<g transform="translate(215, 320)">
+		<text x="0" y="0" text-anchor="middle"
+			  font-family="InstrumentSerif, Georgia, serif" font-size="42" fill="#1A1A1A"
+			  letter-spacing="-0.5">
+			<tspan>Nice </tspan>
+			<tspan font-family="InstrumentSerifItalic, Georgia, serif" font-style="italic" fill="#3B6D11">Clean</tspan>
+		</text>
+	</g>
 
-  <!-- Tagline -->
-  <text x="256" y="370" text-anchor="middle"
-        font-family="DMSansLight, Arial, sans-serif" font-size="16" fill="#666666">
-    Report and track pollution
-  </text>
+	<!-- Tagline -->
+	<text x="263" y="353" text-anchor="middle"
+		  font-family="DMSansLight, Arial, sans-serif" font-size="16" fill="#666666">
+		Report and track pollution
+	</text>
 </svg>
+
