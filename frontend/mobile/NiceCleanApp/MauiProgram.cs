@@ -61,6 +61,7 @@ public static class MauiProgram
         // Pages
         builder.Services.AddTransient<AuthPage>();
         builder.Services.AddTransient<MapPage>();
+        builder.Services.AddTransient<EventsPage>();
 
         // Local notifications
         builder.UseLocalNotification();

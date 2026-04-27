@@ -85,9 +85,9 @@
                            FontSize="13" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}" />
 
-                    <Label Grid.Row="3" Grid.Column="0" Text="Reported"
+                    <Label Grid.Row="2" Grid.Column="0" Text="Reported"
                            FontSize="13" TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}" />
-                    <Label Grid.Row="3" Grid.Column="1" x:Name="DateLabel"
+                    <Label Grid.Row="2" Grid.Column="1" x:Name="DateLabel"
                            FontSize="13" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}" />
 
@@ -118,7 +118,18 @@
                         </HorizontalStackLayout>
                     </Border>
                 </VerticalStackLayout>
-                
+
+                <Button
+                    x:Name="WalkButton"
+                    Text="Organise a Walk"
+                    BackgroundColor="#3B6D11"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    FontSize="14"
+                    IsVisible="False"
+                    Clicked="OnWalkClicked" />
+
             </VerticalStackLayout>
         </VerticalStackLayout>
     </Border>

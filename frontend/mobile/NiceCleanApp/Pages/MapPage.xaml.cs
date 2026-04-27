@@ -297,7 +297,7 @@ public partial class MapPage : ContentPage
             // No pin near the clicked location
         }
 
-            // If we're in "placing pin" mode, the click sets the pending pin location and shows the confirmation popup
+        // If we're in "placing pin" mode, the click sets the pending pin location and shows the confirmation popup
         if (_isPlacingPin && isUserNearby && nearPin == null)
         {
             _pendingPinLocation = clickPoint;
@@ -327,24 +327,31 @@ public partial class MapPage : ContentPage
         if (nearPin != null)
         {
             var userId = _userSession.CurrentUser?.Id ?? -1;
+            bool isWalkable = nearPin.Status == PinStatus.Verified && !nearPin.HasEvent;
 
             // If the tapped pin belongs to another user and is actionable,
             // show the validation popup directly (user tapped intentionally).
             if (nearPin.UserId != userId
                 && nearPin.Status != PinStatus.Cleaned
                 && nearPin.Status != PinStatus.Deleted
+                && nearPin.Status != PinStatus.Verified
                 && isUserNearby)
             {
                 ShowValidationPopup(nearPin);
             }
-            else if (nearPin.UserId != userId && !isUserNearby)
+            else if (nearPin.UserId != userId && nearPin.Status == PinStatus.Verified)
             {
-                var popup = new PinInfoPopup(nearPin, !isUserNearby);
+                var popup = new PinInfoPopup(nearPin, !isUserNearby, isWalkable, _apiClient, userId);
+                this.ShowPopup(popup);
+            }
+            else if (nearPin.Status == PinStatus.Verified)
+            {
+                var popup = new PinInfoPopup(nearPin, !isUserNearby, isWalkable, _apiClient, userId);
                 this.ShowPopup(popup);
             }
             else
             {
-                var popup = new PinInfoPopup(nearPin, false);
+                var popup = new PinInfoPopup(nearPin, !isUserNearby, isWalkable, _apiClient, userId);
                 this.ShowPopup(popup);
             }
         }
@@ -517,14 +524,24 @@ public partial class MapPage : ContentPage
     {
         _isPlacingPin = false;
         PlacingPinBanner.IsVisible = false;
+        TooFarBanner.IsVisible = false;
         SetSelectedTab(Tab.Map);
     }
-    private void OnEventsTabClicked(object? sender, EventArgs e)
+    private async void OnEventsTabClicked(object? sender, EventArgs e)
     {
         _isPlacingPin = false;
         PlacingPinBanner.IsVisible = false;
+        TooFarBanner.IsVisible = false;
         SetSelectedTab(Tab.Events);
-        /* TODO: navigate to cleanwalks */
+
+        // Resolve from DI so EventsPage gets its own IClient + IUserSession
+        var eventsPage =
+            Handler?.MauiContext?.Services.GetService<EventsPage>()
+            ?? new EventsPage(_apiClient, _userSession);
+
+        await Navigation.PushModalAsync(eventsPage, animated: true);
+
+        OnMapTabClicked(sender, e);
     }
     private async void OnMenuTabClicked(object? sender, EventArgs e)
     {

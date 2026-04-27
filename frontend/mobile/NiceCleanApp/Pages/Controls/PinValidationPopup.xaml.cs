@@ -67,6 +67,10 @@ public partial class PinValidationPopup : Popup
         bool alreadyVerified = pin.Status == PinStatus.Verified;
         VerifyButton.IsVisible = !alreadyVerified
             && _apiClient.HasVotedAsync(pin.Id, _currentUserId).Result == false;
+
+        bool alreadyCleaned = pin.Status == PinStatus.Cleaned;
+        CleanedButton.IsVisible = !alreadyCleaned
+            && _apiClient.HasVotedAsync(pin.Id, _currentUserId).Result == false;
     }
 
     // ──────────────────────────────────────────────
@@ -74,27 +78,38 @@ public partial class PinValidationPopup : Popup
     // ──────────────────────────────────────────────
 
     private async void OnVerifyClicked(object? sender, EventArgs e)
-        => await SubmitVoteAsync();
+        => await SubmitVoteAsync(true);
 
     // For the moment this simply closes the popup and leaves the pin as Unverified.
     private async void OnMarkCleanedClicked(object? sender, EventArgs e)
-        => _ = CloseAsync();
+        => await SubmitVoteAsync(false);
 
     /// <summary>
-    /// Confirms pollution is still present via POST /api/Pin/{id}/vote.
-    /// The server transitions the pin to Verified.
+    /// Submits the user's vote to the API and sets the TaskCompletionSource result accordingly.
     /// </summary>
-    private async Task SubmitVoteAsync()
+    private async Task SubmitVoteAsync(bool confirmed)
     {
         SetBusy(true);
         try
         {
-            await _apiClient.VoteAsync(_pin.Id, new PinVoteDto
+            if (confirmed)
             {
-                UserId = _currentUserId,
-                VoteType = VoteType.Confirmed
-            });
-            _tcs.SetResult(PinStatus.Verified);
+                await _apiClient.VoteAsync(_pin.Id, new PinVoteDto
+                {
+                    UserId = _currentUserId,
+                    VoteType = VoteType.Confirmed
+                });
+                _tcs.SetResult(PinStatus.Verified);
+            }
+            else
+            {
+                await _apiClient.VoteAsync(_pin.Id, new PinVoteDto
+                {
+                    UserId = _currentUserId,
+                    VoteType = VoteType.Rejected
+                });
+                _tcs.SetResult(PinStatus.Cleaned);
+            }
         }
         catch (ApiException<ProblemDetails> ex)
         {
