@@ -50,6 +50,7 @@ public class PinRepositoryDB : IPinRepository
         existing.Latitude = pin.Latitude;
         existing.Longitude = pin.Longitude;
         existing.LocationName = pin.LocationName;
+        existing.HasEvent = pin.HasEvent;
 
         _context.SaveChanges();
         return existing;
