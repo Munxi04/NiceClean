@@ -130,6 +130,28 @@
                     IsVisible="False"
                     Clicked="OnWalkClicked" />
 
+                <Button
+                    x:Name="JoinButton"
+                    Text="Join Walk"
+                    BackgroundColor="#3B6D11"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    FontSize="14"
+                    IsVisible="False"
+                    Clicked="OnJoinClicked" />
+
+                <Button
+                    x:Name="LeaveButton"
+                    Text="Leave Walk"
+                    BackgroundColor="#FF3300"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    FontSize="14"
+                    IsVisible="False"
+                    Clicked="OnLeaveClicked" />
+
             </VerticalStackLayout>
         </VerticalStackLayout>
     </Border>

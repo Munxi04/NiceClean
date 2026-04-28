@@ -205,13 +205,35 @@ public partial class MapPage : ContentPage
             _pinLayer.Features.Clear();
 
             foreach (var pin in pins)
+            {
+                if (pin.HasEvent)
+                {
+                    try
+                    {
+                        var ev = await _apiClient.EventGETAsync(pin.EventId);
+                        if (ev.EventStatus == EventStatus.Ended)
+                            continue;
+                    }
+                    catch (ApiException ex) when (ex.StatusCode == 404)
+                    {
+                        // Event no longer exists — treat as no event, still show the pin
+                    }
+                }
+
                 AddPinFeatureToLayer(pin);
+            }
 
             MainMap.Map.Refresh();
 
             // (Re)start proximity monitoring with the fresh pin list.
             var userId = _userSession.CurrentUser?.Id ?? 0;
-            _proximityService.StartMonitoring(pins, userId);
+            _proximityService.StartMonitoring(
+                _pinLayer.Features
+                .OfType<GeometryFeature>()
+                .Select(f => f["Pin"] as Pin)
+                .Where(p => p != null)
+                .Cast<Pin>(),
+                userId);
         }
         catch (Exception ex)
         {
@@ -327,7 +349,6 @@ public partial class MapPage : ContentPage
         if (nearPin != null)
         {
             var userId = _userSession.CurrentUser?.Id ?? -1;
-            bool isWalkable = nearPin.Status == PinStatus.Verified && !nearPin.HasEvent;
 
             // If the tapped pin belongs to another user and is actionable,
             // show the validation popup directly (user tapped intentionally).
@@ -341,17 +362,17 @@ public partial class MapPage : ContentPage
             }
             else if (nearPin.UserId != userId && nearPin.Status == PinStatus.Verified)
             {
-                var popup = new PinInfoPopup(nearPin, !isUserNearby, isWalkable, _apiClient, userId);
+                var popup = new PinInfoPopup(nearPin, !isUserNearby, _apiClient, userId);
                 this.ShowPopup(popup);
             }
             else if (nearPin.Status == PinStatus.Verified)
             {
-                var popup = new PinInfoPopup(nearPin, !isUserNearby, isWalkable, _apiClient, userId);
+                var popup = new PinInfoPopup(nearPin, !isUserNearby, _apiClient, userId);
                 this.ShowPopup(popup);
             }
             else
             {
-                var popup = new PinInfoPopup(nearPin, !isUserNearby, isWalkable, _apiClient, userId);
+                var popup = new PinInfoPopup(nearPin, !isUserNearby, _apiClient, userId);
                 this.ShowPopup(popup);
             }
         }

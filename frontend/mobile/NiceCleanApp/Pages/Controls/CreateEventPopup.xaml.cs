@@ -22,7 +22,7 @@ public partial class CreateEventPopup : Popup
         InitializeComponent();
         _apiClient   = apiClient;
         _hostUserId  = hostUserId;
-        _pins        = availablePins;
+        _pins = availablePins;
 
         PopulatePinPicker();
 

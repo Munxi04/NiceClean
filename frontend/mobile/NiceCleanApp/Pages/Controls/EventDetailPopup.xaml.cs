@@ -9,7 +9,7 @@ namespace NiceCleanApp.Pages.Controls;
 /// </summary>
 public partial class EventDetailPopup : Popup
 {
-    private readonly Event _event;
+    private readonly EventResponseDto _event;
     private readonly IClient _apiClient;
     private readonly int _currentUserId;
 
@@ -18,7 +18,7 @@ public partial class EventDetailPopup : Popup
     /// <summary>Awaitable result — true when a change was made (join / status update).</summary>
     public Task<bool> Result => _tcs.Task;
 
-    public EventDetailPopup(Event @event, IClient apiClient, int currentUserId)
+    public EventDetailPopup(EventResponseDto @event, IClient apiClient, int currentUserId)
     {
         InitializeComponent();
         _event         = @event;
@@ -48,7 +48,8 @@ public partial class EventDetailPopup : Popup
         HeaderGrid.BackgroundColor = headerColor;
 
         DateLabel.Text = _event.Date.LocalDateTime.ToString("dddd d MMMM yyyy · HH:mm");
-        HostLabel.Text = $"User #{_event.HostUserId}";
+        HostLabel.Text = _event.HostNickname;
+        ParticipantsLabel.Text = $"{_event.ParticipantCount}";
 
         // Fetch pin details
         try
@@ -74,13 +75,15 @@ public partial class EventDetailPopup : Popup
         ConfigureActionButtons();
     }
 
-    private void ConfigureActionButtons()
+    private async void ConfigureActionButtons()
     {
         bool isHost   = _currentUserId == _event.HostUserId;
         bool isEnded  = _event.EventStatus == EventStatus.Ended;
+        bool isParticipant = await _apiClient.HasJoinedAsync(_event.EventId, _currentUserId);
 
-        // ── Participant: show Join if event is active, user is not host and event is joinable ──
-        JoinButton.IsVisible = !isHost && !isEnded; // TODO: also check if user is already a participant (requires extra API call or data in event)
+        // ── Participant: show Join if event is active, user is not host, not participant and event is joinable ──
+        JoinButton.IsVisible = !isHost && !isEnded && !isParticipant;
+        LeaveButton.IsVisible = !isHost && !isEnded && isParticipant;
 
         // ── Host controls ──
         HostActions.IsVisible = isHost && !isEnded;
@@ -103,12 +106,41 @@ public partial class EventDetailPopup : Popup
             });
 
             ShowFeedback("You're in! See you at the clean walk 🌿", isError: false);
-            JoinButton.IsVisible = false;
+            ConfigureActionButtons();
             _tcs.TrySetResult(true);
         }
         catch (ApiException<ProblemDetails> ex)
         {
             ShowFeedback(ex.Result?.Detail ?? "Could not join event.", isError: true);
+        }
+        catch (ApiException ex)
+        {
+            ShowFeedback($"Server error ({ex.StatusCode}).", isError: true);
+        }
+        catch (Exception ex)
+        {
+            ShowFeedback($"Unexpected error: {ex.Message}", isError: true);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async void OnLeaveClicked(object? sender, EventArgs e)
+    {
+        SetBusy(true);
+        try
+        {
+            await _apiClient.RemoveAsync(_event.EventId, _currentUserId);
+
+            ShowFeedback("You've left the event.", isError: false);
+            ConfigureActionButtons();
+            _tcs.TrySetResult(true);
+        }
+        catch (ApiException<ProblemDetails> ex)
+        {
+            ShowFeedback(ex.Result?.Detail ?? "Could not leave event.", isError: true);
         }
         catch (ApiException ex)
         {
@@ -173,6 +205,8 @@ public partial class EventDetailPopup : Popup
         {
             SetBusy(false);
         }
+
+        ConfigureActionButtons();
     }
 
     // ──────────────────────────────────────────────

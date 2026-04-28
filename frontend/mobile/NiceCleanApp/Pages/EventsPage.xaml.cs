@@ -30,6 +30,17 @@ public partial class EventsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        _activeFilter ??= EventStatus.Pending;
+
+        var activeBtn = _activeFilter switch
+        {
+            EventStatus.Pending => FilterPendingBtn,
+            EventStatus.Ongoing => FilterOngoingBtn,
+            EventStatus.Ended => FilterEndedBtn,
+            _ => FilterPendingBtn
+        };
+        HighlightFilter(activeBtn);
+
         await LoadEventsAsync();
     }
 
@@ -75,7 +86,7 @@ public partial class EventsPage : ContentPage
     }
 
     private static EventViewModel BuildViewModel(
-        Event e,
+        EventResponseDto e,
         IReadOnlyDictionary<int, Pin> pinMap)
     {
         pinMap.TryGetValue(e.PinId, out var pin);
@@ -127,10 +138,10 @@ public partial class EventsPage : ContentPage
         EventsCollection.ItemsSource = filtered;
     }
 
-    private void OnFilterAll(object? sender, EventArgs e)
+    private void OnFilterEnded(object? sender, EventArgs e)
     {
-        _activeFilter = null;
-        HighlightFilter(FilterAllBtn);
+        _activeFilter = EventStatus.Ended;
+        HighlightFilter(FilterEndedBtn);
         ApplyFilter();
     }
 
@@ -150,7 +161,7 @@ public partial class EventsPage : ContentPage
 
     private void HighlightFilter(Button active)
     {
-        foreach (var btn in new[] { FilterAllBtn, FilterPendingBtn, FilterOngoingBtn })
+        foreach (var btn in new[] { FilterPendingBtn, FilterOngoingBtn, FilterEndedBtn })
         {
             btn.BackgroundColor = btn == active
                 ? Color.FromArgb("#3B6D11")
@@ -196,9 +207,9 @@ public partial class EventsPage : ContentPage
         try
         {
             pins = (await _apiClient.PinAllAsync())
-                .Where(p => p.Status != PinStatus.Cleaned && p.Status != PinStatus.Deleted)
-                .OrderBy(p => p.LocationName)
-                .ToList();
+                    .Where(p => p.Status == PinStatus.Verified && !p.HasEvent)
+                    .OrderBy(p => p.LocationName)
+                    .ToList();
         }
         catch
         {
@@ -209,7 +220,7 @@ public partial class EventsPage : ContentPage
         {
             await DisplayAlertAsync(
                 "No pins available",
-                "There are no active pollution pins to create an event for. Report a pollution spot first!",
+                "There are no verified pollution spots without an existing event. A pin must be verified and not already have an event before you can organise a clean-up.",
                 "OK");
             return;
         }
@@ -254,7 +265,7 @@ public partial class EventsPage : ContentPage
 
 public sealed class EventViewModel
 {
-    public Event  Event           { get; init; } = null!;
+    public EventResponseDto  Event       { get; init; } = null!;
     public string LocationDisplay { get; init; } = string.Empty;
     public string TypeIcon        { get; init; } = string.Empty;
     public string DateDisplay     { get; init; } = string.Empty;

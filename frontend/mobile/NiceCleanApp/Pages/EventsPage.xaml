@@ -7,7 +7,7 @@
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- ── Header ── -->
+        <!-- Header -->
         <Grid Grid.Row="0"
               Padding="16,16,16,16"
               BackgroundColor="#3B6D11"
@@ -43,7 +43,7 @@
                     Clicked="OnCreateEventClicked"/>
         </Grid>
 
-        <!-- ── Body ── -->
+        <!-- Body -->
         <Grid Grid.Row="1">
 
             <ActivityIndicator x:Name="BusyIndicator"
@@ -137,16 +137,17 @@
             </CollectionView>
         </Grid>
 
-        <!-- ── Filter tabs ── -->
+        <!-- Filter tabs -->
         <HorizontalStackLayout Grid.Row="2" Spacing="8" Padding="12,8" HorizontalOptions="Center">
-            <Button x:Name="FilterAllBtn"     Text="All"     Clicked="OnFilterAll"
+            
+            <Button x:Name="FilterPendingBtn" Text="Pending" Clicked="OnFilterPending"
                     BackgroundColor="#3B6D11" TextColor="White"
                     CornerRadius="20" FontSize="13" Padding="16,6"/>
-            <Button x:Name="FilterPendingBtn" Text="Pending" Clicked="OnFilterPending"
+            <Button x:Name="FilterOngoingBtn" Text="Ongoing" Clicked="OnFilterOngoing"
                     BackgroundColor="Transparent"
                     TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
                     CornerRadius="20" FontSize="13" Padding="16,6"/>
-            <Button x:Name="FilterOngoingBtn" Text="Ongoing" Clicked="OnFilterOngoing"
+            <Button x:Name="FilterEndedBtn"     Text="Ended"     Clicked="OnFilterEnded"
                     BackgroundColor="Transparent"
                     TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
                     CornerRadius="20" FontSize="13" Padding="16,6"/>
