@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
 using NiceCleanApp.Services;
 
@@ -109,22 +110,10 @@ public partial class EventDetailPopup : Popup
             ConfigureActionButtons();
             _tcs.TrySetResult(true);
         }
-        catch (ApiException<ProblemDetails> ex)
-        {
-            ShowFeedback(ex.Result?.Detail ?? "Could not join event.", isError: true);
-        }
-        catch (ApiException ex)
-        {
-            ShowFeedback($"Server error ({ex.StatusCode}).", isError: true);
-        }
-        catch (Exception ex)
-        {
-            ShowFeedback($"Unexpected error: {ex.Message}", isError: true);
-        }
-        finally
-        {
-            SetBusy(false);
-        }
+        catch (ApiException<ProblemDetails> ex) { ShowFeedback(ex.Result?.Detail ?? "Could not join event.", isError: true); }
+        catch (ApiException ex) { ShowFeedback($"Server error ({ex.StatusCode}).", isError: true); }
+        catch (Exception ex) { ShowFeedback($"Unexpected error: {ex.Message}", isError: true); }
+        finally { SetBusy(false); }
     }
 
     private async void OnLeaveClicked(object? sender, EventArgs e)
@@ -164,7 +153,47 @@ public partial class EventDetailPopup : Popup
         => await UpdateStatusAsync(EventStatus.Ongoing);
 
     private async void OnEndClicked(object? sender, EventArgs e)
-        => await UpdateStatusAsync(EventStatus.Ended);
+    {
+        SetBusy(true);
+        try
+        {
+            // 1. Mark the event as Ended on the server.
+            await _apiClient.StatusAsync(_event.EventId, EventStatus.Ended, _currentUserId);
+
+            // Update local UI to reflect the new status immediately.
+            ShowFeedback("Event ended. Thanks for cleaning up! 🌱", isError: false);
+            StartButton.IsVisible = false;
+            EndButton.IsVisible = false;
+            StatusDot.Color = Color.FromArgb("#888888");
+            StatusLabel.Text = "Ended";
+
+            _tcs.TrySetResult(true);
+        }
+        catch (ApiException<ProblemDetails> ex) { ShowFeedback(ex.Result?.Detail ?? "Could not end event.", isError: true); SetBusy(false); return; }
+        catch (ApiException ex) { ShowFeedback($"Server error ({ex.StatusCode}).", isError: true); SetBusy(false); return; }
+        catch (Exception ex) { ShowFeedback($"Unexpected error: {ex.Message}", isError: true); SetBusy(false); return; }
+        finally { SetBusy(false); }
+
+        _ = CloseAsync();
+
+        var reportPopup = new EventReportPopup();
+        Shell.Current.CurrentPage.ShowPopup(reportPopup);
+        var report = await reportPopup.Result;
+
+        if (report is not null)
+        {
+            // TODO: POST report to your API endpoint when available.
+            // e.g. await _apiClient.SubmitReportAsync(new ReportDto { ... });
+
+            await AppShell.DisplaySnackbarAsync(
+                $"🌿 Report saved — {report.BagCount} bag{(report.BagCount == 1 ? "" : "s")}, " +
+                $"~{report.LitresTotal} L collected. Amazing work!");
+        }
+        else
+        {
+            await AppShell.DisplaySnackbarAsync("Event ended. Great job cleaning up! 🌿");
+        }
+    }
 
     private async Task UpdateStatusAsync(EventStatus newStatus)
     {
