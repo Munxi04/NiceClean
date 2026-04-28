@@ -26,7 +26,8 @@ public class PinRepository : IPinRepository
             latitude: 43.6950,
             longitude: 7.2586,
             locationName: "Promenade des Anglais",
-            hasEvent: false
+            hasEvent: false,
+            eventId: 0
         ));
 
         Add(new Pin(
@@ -40,7 +41,8 @@ public class PinRepository : IPinRepository
             latitude: 43.7034,
             longitude: 7.2663,
             locationName: "Avenue Jean Médecin Area",
-            hasEvent: false
+            hasEvent: false,
+            eventId: 0
         ));
 
         Add(new Pin(
@@ -54,7 +56,8 @@ public class PinRepository : IPinRepository
             latitude: 43.6967,
             longitude: 7.2755,
             locationName: "Vieux Nice",
-            hasEvent: false
+            hasEvent: false,
+            eventId: 0
         ));
     }
 

@@ -16,5 +16,8 @@ public interface IEventRepository
 
     Participation? AddParticipant(int eventId, int userId);
     List<Participation> GetParticipantsForEvent(int eventId);
+    List<string> GetEventNicknames(int eventId);
     bool HasUserJoined(int eventId, int userId);
+    bool RemoveParticipant(int eventId, int userId);
+    Event? RescheduleEvent(int eventId, DateTime newDate);
 }

@@ -20,8 +20,9 @@ public class Pin
     public double Longitude { get; set; }
     public string LocationName { get; set; }
     public bool HasEvent { get; set; }
+    public int EventId { get; set; }
 
-    public Pin(int id, int userId, DateTime creationDate, PollutionSeverity severity, double radius, PinStatus status, PollutionType pollutionType, double latitude, double longitude, string locationName, bool hasEvent)
+    public Pin(int id, int userId, DateTime creationDate, PollutionSeverity severity, double radius, PinStatus status, PollutionType pollutionType, double latitude, double longitude, string locationName, bool hasEvent, int eventId)
     {
         Id = id;
         UserId = userId;
@@ -34,5 +35,6 @@ public class Pin
         Longitude = longitude;
         LocationName = locationName;
         HasEvent = hasEvent;
+        EventId = eventId;
     }
 }

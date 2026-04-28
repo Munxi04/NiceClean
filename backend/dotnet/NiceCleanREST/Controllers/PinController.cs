@@ -132,7 +132,8 @@ public class PinController : ControllerBase
             latitude: dto.Latitude,
             longitude: dto.Longitude,
             locationName: dto.LocationName,
-            hasEvent: false
+            hasEvent: false,
+            eventId: 0
         );
 
         var created = _pinRepo.Add(pin);

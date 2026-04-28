@@ -12,6 +12,7 @@ namespace NiceCleanLib.Services.Repositories
     {
         private readonly List<Event> _events = new();
         private readonly List<Participation> _participations = new();
+        private readonly IUserRepository _userRepository;
         private int _nextEventId = 1;
         private int _nextParticipationId = 1;
 
@@ -60,6 +61,7 @@ namespace NiceCleanLib.Services.Repositories
                 JoinDate = DateTime.UtcNow
             };
             _participations.Add(participation);
+            GetById(eventId)!.ParticipationCount += 1;
             return participation;
         }
 
@@ -68,9 +70,36 @@ namespace NiceCleanLib.Services.Repositories
             return _participations.Where(p => p.EventId == eventId).ToList();
         }
 
+        public List<string> GetEventNicknames(int eventId)
+        {
+            var participations = GetParticipantsForEvent(eventId);
+            return participations.Select(p => _userRepository.GetById(p.UserId)?.Nickname ?? "Unknown User").ToList();
+        }
+
         public bool HasUserJoined(int eventId, int userId)
         {
             return _participations.Any(p => p.EventId == eventId && p.UserId == userId);
+        }
+
+        public bool RemoveParticipant(int eventId, int userId)
+        {
+            var participation = _participations
+                .FirstOrDefault(p => p.EventId == eventId && p.UserId == userId);
+
+            if (participation == null) return false;
+
+            _participations.Remove(participation);
+            GetById(eventId)!.ParticipationCount -= 1;
+            return true;
+        }
+
+        public Event? RescheduleEvent(int eventId, DateTime newDate)
+        {
+            var existingEvent = GetById(eventId);
+            if (existingEvent == null) return null;
+
+            existingEvent.Date = newDate;
+            return existingEvent;
         }
     }
 }

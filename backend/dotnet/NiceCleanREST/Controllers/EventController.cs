@@ -25,24 +25,56 @@ public class EventController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public ActionResult<IEnumerable<Event>> Get()
+    public ActionResult<IEnumerable<EventResponseDto>> Get()
     {
-        var result = _eventRepo.GetAll();
-        if (!result.Any()) return NoContent();
+        var events = _eventRepo.GetAll();
+        if (!events.Any()) return NoContent();
 
-        return Ok(result);
+        var responseList = new List<EventResponseDto>();
+
+        foreach (var ev in events)
+        {
+            var hostUser = _userRepo.GetById(ev.HostUserId);
+
+            responseList.Add(new EventResponseDto
+            {
+                EventId = ev.EventId,
+                Date = ev.Date,
+                EventStatus = ev.EventStatus,
+                PinId = ev.PinId,
+                HostUserId = ev.HostUserId,
+                HostNickname = hostUser?.Nickname ?? "Unknown Host"
+            });
+        }
+
+        return Ok(responseList);
     }
 
     // GET api/<EventController>/5
     [HttpGet("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<Event> GetById(int id)
+    public ActionResult<EventResponseDto> GetById(int id)
     {
         var ev = _eventRepo.GetById(id);
         if (ev == null) return NotFound();
 
-        return Ok(ev);
+        var hostUser = _userRepo.GetById(ev.HostUserId);
+
+        var participantCount = _eventRepo.GetParticipantsForEvent(ev.EventId).Count;
+
+        var responseDto = new EventResponseDto
+        {
+            EventId = ev.EventId,
+            Date = ev.Date,
+            EventStatus = ev.EventStatus,
+            PinId = ev.PinId,
+            HostUserId = ev.HostUserId,
+            HostNickname = hostUser?.Nickname ?? "Unknown Host",
+            ParticipantCount = participantCount
+        };
+
+        return Ok(responseDto);
     }
 
     // GET api/<EventController>/5/hasJoined/2
@@ -80,12 +112,15 @@ public class EventController : ControllerBase
             date: dto.StartTime,
             eventStatus: EventStatus.Pending,
             hostUserId: dto.HostUserId,
-            pinId: dto.PinId
+            nickname: dto.HostNickname,
+            pinId: dto.PinId,
+            participationCount: 0
         );
 
         var created = _eventRepo.Add(newEvent);
 
         pin.HasEvent = true;
+        pin.EventId = created.EventId;
         _pinRepo.Update(pin.Id, pin);
 
         // Automatically add the host as a participant
@@ -132,5 +167,43 @@ public class EventController : ControllerBase
         var updatedEv = _eventRepo.UpdateStatus(id, status);
 
         return Ok(updatedEv);
+    }
+
+    // PUT api/<EventController>/5/reschedule
+    [HttpPut("{id}/reschedule")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<Event> RescheduleEvent(int id, [FromQuery] DateTime newDate, [FromQuery] int hostUserId)
+    {
+        var ev = _eventRepo.GetById(id);
+        if (ev == null) return NotFound("Event not found.");
+
+        if (ev.HostUserId != hostUserId)
+            return BadRequest("Only the host can reschedule the event.");
+
+        var updatedEvent = _eventRepo.RescheduleEvent(id, newDate);
+        if (updatedEvent == null)
+            return BadRequest("Failed to reschedule the event.");
+
+        return Ok(updatedEvent);
+    }
+
+    // DELETE api/<EventController>/5/remove/2
+    [HttpDelete("{eventId}/remove/{userId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult RemoveParticipant(int eventId, int userId)
+    {
+        var ev = _eventRepo.GetById(eventId);
+        if (ev == null) return NotFound("Event not found.");
+
+        if (!_eventRepo.HasUserJoined(eventId, userId))
+            return NotFound("User is not a participant of this event.");
+
+        var success = _eventRepo.RemoveParticipant(eventId, userId);
+        if (!success) return BadRequest("Failed to remove participant.");
+
+        return Ok("Participant removed successfully.");
     }
 }

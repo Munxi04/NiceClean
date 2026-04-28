@@ -12,4 +12,5 @@ public class EventResponseDto
     // The new Host properties for the frontend
     public int HostUserId { get; set; }
     public string HostNickname { get; set; } = string.Empty;
+    public int ParticipantCount { get; set; }
 }
