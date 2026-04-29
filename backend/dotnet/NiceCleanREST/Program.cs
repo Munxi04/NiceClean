@@ -26,13 +26,16 @@ builder.Services.AddDbContext<NiceCleanDbContext>(options =>
 // Reposistories for database:
 //builder.Services.AddScoped<IPinRepository, PinRepositoryDB>();
 //builder.Services.AddScoped<IUserRepository, UserRepositoryDB>();
-//builder.Services.AddScoped<IPinVoteRepository, PinVoteRepository>();
+//builder.Services.AddScoped<IPinVoteRepository, PinVoteRepositoryDB>();
+//builder.Services.AddScoped<IEventRepository, EventRepositoryDB>();
+//builder.Services.AddScoped<IReportRepository, ReportRepositoryDB>();
 
 // Reposistories for testing with a collection in-memory:
 builder.Services.AddSingleton<IPinRepository, PinRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IPinVoteRepository, PinVoteRepository>();
 builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.Services.AddSingleton<IReportRepository, ReportRepository>();
 
 //CORS
 builder.Services.AddCors(options =>

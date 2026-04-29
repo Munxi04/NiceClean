@@ -12,6 +12,9 @@ public class NiceCleanDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Pin> Pins { get; set; }
     public DbSet<PinVote> PinVotes { get; set; }
+    public DbSet<Report> Reports { get; set; }
+    public DbSet<Event> Events { get; set; }
+    public DbSet<Participation> Participations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +78,49 @@ public class NiceCleanDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade); // Deleting a user deletes their votes
+        });
+
+        // --> Configure Event table (Added)
+        modelBuilder.Entity<Event>(entity =>
+        {
+            entity.HasKey(e => e.EventId);
+            entity.Property(e => e.EventStatus).HasConversion<string>();
+        });
+
+        // --> Configure Participation table
+        modelBuilder.Entity<Participation>(entity =>
+        {
+            entity.HasKey(e => e.ParticipationId);
+
+            // Prevent user from joining the same event twice at the DB layer
+            entity.HasIndex(e => new { e.EventId, e.UserId }).IsUnique();
+
+            entity.Property(e => e.JoinDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne<Event>()
+                .WithMany()
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --> Configure Report table
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.HasKey(e => e.ReportId);
+            entity.Property(e => e.BagVolume).HasConversion<string>();
+
+            // An event can only have one report total.
+            entity.HasIndex(e => e.EventId).IsUnique();
+
+            entity.HasOne<Event>()
+                .WithMany()
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
