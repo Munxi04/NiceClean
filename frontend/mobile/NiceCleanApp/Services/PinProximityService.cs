@@ -8,7 +8,7 @@ namespace NiceCleanApp.Services;
 /// </summary>
 public interface IPinProximityService
 {
-    /// <summary>Fired on the UI thread when the user steps within <see cref="TriggerRadiusMeters"/> of a qualifying pin.</summary>
+    /// <summary>Fired on the UI thread when the user steps within 10 meters of a qualifying pin.</summary>
     event EventHandler<Pin> PinEntered;
 
     /// <summary>Begin GPS polling against the supplied pin list.</summary>

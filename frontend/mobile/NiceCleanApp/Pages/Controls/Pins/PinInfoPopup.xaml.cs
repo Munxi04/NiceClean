@@ -72,7 +72,7 @@ public partial class PinInfoPopup : Popup
         }
 
         WalkButton.IsVisible = _pin.Status == PinStatus.Verified && !_pin.HasEvent;
-        TooFarBanner.IsVisible = _isTooFar;
+        TooFarBanner.IsVisible = _isTooFar && _pin.Status == PinStatus.Unverified;
         JoinButton.IsVisible = _pin.HasEvent && !isHost && !isParticipant;
         LeaveButton.IsVisible = _pin.HasEvent && !isHost && isParticipant;
     }

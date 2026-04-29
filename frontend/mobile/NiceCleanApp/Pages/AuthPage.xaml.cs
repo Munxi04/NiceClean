@@ -5,9 +5,10 @@ namespace NiceCleanApp.Pages;
 public partial class AuthPage : ContentPage
 {
     private readonly IClient _api;
-    private bool _isLogin = true;
     private readonly IUserSession _userSession;
     private readonly ICredentialService _credentialService;
+
+    private bool _isLogin = true;
 
     public AuthPage(IClient api, IUserSession userSession, ICredentialService credentialService)
     {
@@ -15,11 +16,6 @@ public partial class AuthPage : ContentPage
         _api = api;
         _userSession = userSession;
         _credentialService = credentialService;
-
-        // Follow the device theme by default unless the user has already
-        // chosen a preference during this session.
-        if (Application.Current!.UserAppTheme == AppTheme.Unspecified)
-            Application.Current.UserAppTheme = AppTheme.Unspecified;
         
         UpdateTabIndicator();
         UpdateThemeHighlight();
@@ -39,15 +35,12 @@ public partial class AuthPage : ContentPage
     // Tab switching
     // ──────────────────────────────────────────────
 
-    /// <summary>
-    /// Switches between the login and registration forms, updating the UI elements
-    /// </summary>
-    /// <param name="login"></param>
     void SwitchTab(bool login)
     {
         _isLogin = login;
         LoginForm.IsVisible = login;
         RegisterForm.IsVisible = !login;
+
         HeadingLabel.Text = login ? "Welcome back" : "Join NiceClean";
         SubLabel.Text = login
             ? "Sign in to report and track pollution in your area."
@@ -56,6 +49,7 @@ public partial class AuthPage : ContentPage
         TabLogin.FontAttributes = login ? FontAttributes.Bold : FontAttributes.None;
         TabRegister.TextColor = !login ? Color.FromArgb("#3B6D11") : Color.FromArgb("#aaa");
         TabRegister.FontAttributes = !login ? FontAttributes.Bold : FontAttributes.None;
+
         UpdateTabIndicator();
         ClearAlerts();
     }
@@ -63,20 +57,11 @@ public partial class AuthPage : ContentPage
     /// <summary>
     /// Updates the width and position of the tab indicator to align with the currently active tab.
     /// </summary>
-    /// <remarks>This method should be called whenever the active tab changes to ensure the indicator
-    /// accurately reflects the selected tab. The indicator's width is adjusted based on the active tab's text length,
-    /// and its position is updated to match the active tab.</remarks>
     void UpdateTabIndicator()
     {
         var activeButton = _isLogin ? TabLogin : TabRegister;
-        var text = activeButton.Text;
-
-        var width = text.Length * 8;
-        TabIndicator.WidthRequest = width;
-        
-
-        var leftMargin = _isLogin ? 0 : TabLogin.Width + 24; 
-        TabIndicator.Margin = new Thickness(leftMargin, 0, 0, 0);
+        TabIndicator.WidthRequest = activeButton.Text.Length * 8;
+        TabIndicator.Margin = new Thickness(_isLogin ? 0 : TabLogin.Width + 24, 0, 0, 0);
     }
 
     void OnTabLoginClicked(object sender, EventArgs e) => SwitchTab(true);
@@ -89,11 +74,6 @@ public partial class AuthPage : ContentPage
     void ShowSuccess(string msg) { SuccessLabel.Text = msg; SuccessBox.IsVisible = true; ErrorBox.IsVisible = false; }
     void ClearAlerts() { ErrorBox.IsVisible = false; SuccessBox.IsVisible = false; }
 
-    /// <summary>
-    /// Enables or disables the login and registration buttons and updates their text to indicate a loading state.
-    /// </summary>
-    /// <param name="loading">true to indicate that a loading operation is in progress and disable the buttons; false to re-enable the buttons
-    /// and restore their default text.</param>
     void SetLoading(bool loading)
     {
         LoginButton.IsEnabled = !loading;
@@ -127,17 +107,14 @@ public partial class AuthPage : ContentPage
         var userTheme = Application.Current?.UserAppTheme;
         bool isLight = userTheme == AppTheme.Light
             || (userTheme != AppTheme.Dark && Application.Current?.RequestedTheme == AppTheme.Light);
+        bool isDark = Application.Current?.UserAppTheme == AppTheme.Dark
+                     || Application.Current?.RequestedTheme == AppTheme.Dark;
 
-        bool isDarkMode = Application.Current?.RequestedTheme == AppTheme.Dark
-                       || Application.Current?.UserAppTheme == AppTheme.Dark;
+        var active = Color.FromArgb("#3B6D11");
+        var inactive = isDark ? Color.FromArgb("#2C2C2C") : Color.FromArgb("#F5F5F5");
 
-        var activeColor = Microsoft.Maui.Graphics.Color.FromArgb("#3B6D11");
-        var inactiveLightColor = Microsoft.Maui.Graphics.Color.FromArgb("#F5F5F5");
-        var inactiveDarkColor = Microsoft.Maui.Graphics.Color.FromArgb("#2C2C2C");
-        var inactiveColor = isDarkMode ? inactiveDarkColor : inactiveLightColor;
-
-        LightThemeCard.BackgroundColor = isLight ? activeColor : inactiveColor;
-        DarkThemeCard.BackgroundColor = isLight ? inactiveColor : activeColor;
+        LightThemeCard.BackgroundColor = isLight ? active : inactive;
+        DarkThemeCard.BackgroundColor = isLight ? inactive : active;
     }
 
     // ──────────────────────────────────────────────
@@ -155,9 +132,11 @@ public partial class AuthPage : ContentPage
     async void OnLoginClicked(object sender, EventArgs e)
     {
         ClearAlerts();
+
         if (string.IsNullOrWhiteSpace(LoginEmail.Text) || string.IsNullOrWhiteSpace(LoginPassword.Text))
         {
-            ShowError("Please enter your email and password."); return;
+            ShowError("Please enter your email and password.");
+            return;
         }
 
         SetLoading(true);
@@ -170,15 +149,13 @@ public partial class AuthPage : ContentPage
             });
 
             await _credentialService.SaveCredentialsAsync(LoginEmail.Text.Trim(), LoginPassword.Text);
-
             _userSession.CurrentUser = user;
 
             ShowSuccess($"Welcome back, {user.Nickname ?? user.Email}!");
-
             await Task.Delay(300);
             await Shell.Current.GoToAsync("//MapPage");
         }
-        catch (ApiException ex) when (ex.StatusCode == 401)   // <-- added
+        catch (ApiException ex) when (ex.StatusCode == 401)
         {
             ShowError("Incorrect email or password. Please try again.");
         }
@@ -205,19 +182,6 @@ public partial class AuthPage : ContentPage
     /// <param name="e">An EventArgs object that contains the event data.</param>
     async void OnRegisterClicked(object sender, EventArgs e)
     {
-        if (RegPassword.Text.Length < 8)
-        {
-            ShowError("Password must be at least 8 characters."); return;
-        }
-
-        var dob = RegDob.Date ?? DateTime.Today;
-        var age = DateTime.Today.Year - dob.Year;
-        if (dob.Date > DateTime.Today.AddYears(-age)) age--; // adjust if birthday hasn't occurred yet this year
-        if (age < 18)
-        {
-            ShowError("You must be at least 18 years old to create an account."); return;
-        }
-
         ClearAlerts();
         if (string.IsNullOrWhiteSpace(RegNickname.Text) ||
             string.IsNullOrWhiteSpace(RegEmail.Text) ||
@@ -225,9 +189,20 @@ public partial class AuthPage : ContentPage
         {
             ShowError("Please fill in all fields."); return;
         }
+
         if (RegPassword.Text.Length < 8)
         {
             ShowError("Password must be at least 8 characters."); return;
+        }
+
+        var dob = RegDob.Date ?? DateTime.Today;
+        var age = DateTime.Today.Year - dob.Year;
+        if (dob.Date > DateTime.Today.AddYears(-age)) age--;
+
+        if (age < 18)
+        {
+            ShowError("You must be at least 18 years old to create an account.");
+            return;
         }
 
         SetLoading(true);

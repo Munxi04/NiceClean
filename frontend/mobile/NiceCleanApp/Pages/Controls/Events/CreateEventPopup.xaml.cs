@@ -14,14 +14,14 @@ public partial class CreateEventPopup : Popup
 
     private readonly TaskCompletionSource<bool> _tcs = new();
 
-    /// <summary>Awaitable result — true when an event was successfully created.</summary>
+    /// <summary>Awaitable result — <c>true</c> when an event was successfully created.</summary>
     public Task<bool> Result => _tcs.Task;
 
     public CreateEventPopup(IReadOnlyList<Pin> availablePins, int hostUserId, IClient apiClient)
     {
         InitializeComponent();
-        _apiClient   = apiClient;
-        _hostUserId  = hostUserId;
+        _apiClient = apiClient;
+        _hostUserId = hostUserId;
         _pins = availablePins;
 
         PopulatePinPicker();
@@ -41,7 +41,7 @@ public partial class CreateEventPopup : Popup
         {
             var label = string.IsNullOrWhiteSpace(pin.LocationName)
                 ? $"{pin.PollutionType} at {pin.Latitude:F4}, {pin.Longitude:F4}"
-                : $"{pin.LocationName} - {pin.PollutionType}";
+                : $"{pin.LocationName} – {pin.PollutionType}";
 
             PinPicker.Items.Add(label);
         }
@@ -64,8 +64,13 @@ public partial class CreateEventPopup : Popup
             return;
         }
 
-        var selectedPin = _pins[PinPicker.SelectedIndex];
-        var startTime = EventDatePicker.Date + EventTimePicker.Time;
+        if (EventDatePicker.Date is not DateTime date || EventTimePicker.Time is not TimeSpan time)
+        {
+            ShowError("Please select both a date and a time.");
+            return;
+        }
+
+        var startTime = date + time;
 
         if (startTime <= DateTime.Now)
         {
@@ -76,39 +81,22 @@ public partial class CreateEventPopup : Popup
         SetBusy(true);
         try
         {
-            if ( startTime != null)
-            {
-                await _apiClient.EventPOSTAsync(new EventCreateDto
-                {
-                    PinId = selectedPin.Id,
-                    HostUserId = _hostUserId,
-                    StartTime = new DateTimeOffset((DateTime)startTime, TimeZoneInfo.Local.GetUtcOffset((DateTime)startTime))
-                });
+            var selectedPin = _pins[PinPicker.SelectedIndex];
 
-                _tcs.SetResult(true);
-            }
-            else
+            await _apiClient.EventPOSTAsync(new EventCreateDto
             {
-                ShowError("Invalid date/time.");
-            }
+                PinId = selectedPin.Id,
+                HostUserId = _hostUserId,
+                StartTime = new DateTimeOffset(startTime, TimeZoneInfo.Local.GetUtcOffset(startTime))
+            });
+
+            _tcs.TrySetResult(true);
             _ = CloseAsync();
         }
-        catch (ApiException<ProblemDetails> ex)
-        {
-            ShowError(ex.Result?.Detail ?? "Could not create event.");
-        }
-        catch (ApiException ex)
-        {
-            ShowError($"Server error ({ex.StatusCode}).");
-        }
-        catch (Exception ex)
-        {
-            ShowError($"Unexpected error: {ex.Message}");
-        }
-        finally
-        {
-            SetBusy(false);
-        }
+        catch (ApiException<ProblemDetails> ex) { ShowError(ex.Result?.Detail ?? "Could not create event."); }
+        catch (ApiException ex) { ShowError($"Server error ({ex.StatusCode})."); }
+        catch (Exception ex) { ShowError($"Unexpected error: {ex.Message}"); }
+        finally { SetBusy(false); }
     }
 
     private void OnCloseClicked(object? sender, EventArgs e)
@@ -123,13 +111,13 @@ public partial class CreateEventPopup : Popup
 
     private void ShowError(string message)
     {
-        ErrorLabel.Text      = message;
+        ErrorLabel.Text = message;
         ErrorLabel.IsVisible = true;
     }
 
     private void SetBusy(bool busy)
     {
-        CreateButton.IsEnabled  = !busy;
+        CreateButton.IsEnabled = !busy;
         BusyIndicator.IsRunning = busy;
         BusyIndicator.IsVisible = busy;
     }

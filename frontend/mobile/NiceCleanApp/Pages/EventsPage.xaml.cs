@@ -14,7 +14,7 @@ public partial class EventsPage : ContentPage
 
     // Full list kept in memory for client-side filtering
     private List<EventViewModel> _allViewModels = [];
-    private EventStatus? _activeFilter = null;
+    private EventStatus _activeFilter = EventStatus.Pending;
 
     public EventsPage(IClient apiClient, IUserSession userSession)
     {
@@ -30,17 +30,7 @@ public partial class EventsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        _activeFilter ??= EventStatus.Pending;
-
-        var activeBtn = _activeFilter switch
-        {
-            EventStatus.Pending => FilterPendingBtn,
-            EventStatus.Ongoing => FilterOngoingBtn,
-            EventStatus.Ended => FilterEndedBtn,
-            _ => FilterPendingBtn
-        };
-        HighlightFilter(activeBtn);
-
+        HighlightFilter(FilterButtonForStatus(_activeFilter));
         await LoadEventsAsync();
     }
 
@@ -55,13 +45,12 @@ public partial class EventsPage : ContentPage
         {
             // Fetch events and pins in parallel
             var eventsTask = _apiClient.EventAllAsync();
-            var pinsTask   = _apiClient.PinAllAsync();
+            var pinsTask = _apiClient.PinAllAsync();
             await Task.WhenAll(eventsTask, pinsTask);
 
-            var events = eventsTask.Result;
             var pinMap = pinsTask.Result.ToDictionary(p => p.Id);
 
-            _allViewModels = events
+            _allViewModels = eventsTask.Result
                 .OrderBy(e => e.EventStatus)
                 .ThenBy(e => e.Date)
                 .Select(e => BuildViewModel(e, pinMap))
@@ -71,7 +60,6 @@ public partial class EventsPage : ContentPage
         }
         catch (ApiException ex) when (ex.StatusCode == 204)
         {
-            // No events — empty state handled below
             _allViewModels = [];
             ApplyFilter();
         }
@@ -99,26 +87,25 @@ public partial class EventsPage : ContentPage
 
         var typeIcon = pin?.PollutionType switch
         {
-            PollutionType.Plastic   => "🛢️",
-            PollutionType.Glass     => "🍾",
+            PollutionType.Plastic => "🛢️",
+            PollutionType.Glass => "🍾",
             PollutionType.Furniture => "🪑",
-            _                       => "⚠️"
+            _ => "⚠️"
         };
 
         return new EventViewModel
         {
-            Event           = e,
+            Event = e,
             LocationDisplay = locationDisplay,
-            TypeIcon        = typeIcon,
-            DateDisplay     = $"🗓  {e.Date.LocalDateTime:dddd dd MMM yyyy · HH:mm}",
-            HostDisplay     = $"👤 Host user #{e.HostUserId}",
-            StatusLabel     = e.EventStatus.ToString(),
-            StatusColor     = e.EventStatus switch
+            TypeIcon = typeIcon,
+            DateDisplay = $"🗓  {e.Date.LocalDateTime:dddd dd MMM yyyy · HH:mm}",
+            HostDisplay = $"👤 Host user #{e.HostUserId}",
+            StatusLabel = e.EventStatus.ToString(),
+            StatusColor = e.EventStatus switch
             {
-                EventStatus.Pending  => Color.FromArgb("#FF9900"),
-                EventStatus.Ongoing  => Color.FromArgb("#3B6D11"),
-                EventStatus.Ended    => Color.FromArgb("#888888"),
-                _                    => Color.FromArgb("#888888")
+                EventStatus.Pending => Color.FromArgb("#FF9900"),
+                EventStatus.Ongoing => Color.FromArgb("#3B6D11"),
+                _ => Color.FromArgb("#888888")   // Ended + unknown
             }
         };
     }
@@ -129,47 +116,43 @@ public partial class EventsPage : ContentPage
 
     private void ApplyFilter()
     {
-        var filtered = _activeFilter is null
-            ? _allViewModels
-            : _allViewModels.Where(vm => vm.Event.EventStatus == _activeFilter).ToList();
+        var filtered = _allViewModels
+            .Where(vm => vm.Event.EventStatus == _activeFilter)
+            .ToList();
 
-        EmptyState.IsVisible        = filtered.Count == 0;
-        EventsCollection.IsVisible  = filtered.Count > 0;
+        EmptyState.IsVisible = filtered.Count == 0;
+        EventsCollection.IsVisible = filtered.Count > 0;
         EventsCollection.ItemsSource = filtered;
     }
 
-    private void OnFilterEnded(object? sender, EventArgs e)
+    // FIX: consolidated three near-identical handlers into one helper
+    private void SetFilter(EventStatus status)
     {
-        _activeFilter = EventStatus.Ended;
-        HighlightFilter(FilterEndedBtn);
+        _activeFilter = status;
+        HighlightFilter(FilterButtonForStatus(status));
         ApplyFilter();
     }
 
-    private void OnFilterPending(object? sender, EventArgs e)
-    {
-        _activeFilter = EventStatus.Pending;
-        HighlightFilter(FilterPendingBtn);
-        ApplyFilter();
-    }
+    private void OnFilterPending(object? sender, EventArgs e) => SetFilter(EventStatus.Pending);
+    private void OnFilterOngoing(object? sender, EventArgs e) => SetFilter(EventStatus.Ongoing);
+    private void OnFilterEnded(object? sender, EventArgs e) => SetFilter(EventStatus.Ended);
 
-    private void OnFilterOngoing(object? sender, EventArgs e)
+    private Button FilterButtonForStatus(EventStatus status) => status switch
     {
-        _activeFilter = EventStatus.Ongoing;
-        HighlightFilter(FilterOngoingBtn);
-        ApplyFilter();
-    }
+        EventStatus.Ongoing => FilterOngoingBtn,
+        EventStatus.Ended => FilterEndedBtn,
+        _ => FilterPendingBtn
+    };
 
     private void HighlightFilter(Button active)
     {
         foreach (var btn in new[] { FilterPendingBtn, FilterOngoingBtn, FilterEndedBtn })
         {
-            btn.BackgroundColor = btn == active
-                ? Color.FromArgb("#3B6D11")
-                : Colors.Transparent;
-
-            btn.SetAppThemeColor(Button.TextColorProperty,
+            btn.BackgroundColor = btn == active ? Color.FromArgb("#3B6D11") : Colors.Transparent;
+            btn.SetAppThemeColor(
+                Button.TextColorProperty,
                 light: btn == active ? Colors.White : Color.FromArgb("#333333"),
-                dark:  btn == active ? Colors.White : Color.FromArgb("#EEEEEE"));
+                dark: btn == active ? Colors.White : Color.FromArgb("#EEEEEE"));
         }
     }
 
@@ -181,12 +164,10 @@ public partial class EventsPage : ContentPage
     {
         if (e.Parameter is not EventViewModel vm) return;
 
-        var currentUserId = _userSession.CurrentUser?.Id ?? 0;
-        var popup = new EventDetailPopup(vm.Event, _apiClient, currentUserId);
+        var popup = new EventDetailPopup(vm.Event, _apiClient, _userSession.CurrentUser?.Id ?? 0);
         this.ShowPopup(popup);
-        var changed = await popup.Result;
 
-        if (changed)
+        if (await popup.Result)
             await LoadEventsAsync();
     }
 
@@ -207,9 +188,9 @@ public partial class EventsPage : ContentPage
         try
         {
             pins = (await _apiClient.PinAllAsync())
-                    .Where(p => p.Status == PinStatus.Verified && !p.HasEvent)
-                    .OrderBy(p => p.LocationName)
-                    .ToList();
+                .Where(p => p.Status == PinStatus.Verified && !p.HasEvent)
+                .OrderBy(p => p.LocationName)
+                .ToList();
         }
         catch
         {
@@ -220,16 +201,16 @@ public partial class EventsPage : ContentPage
         {
             await DisplayAlertAsync(
                 "No pins available",
-                "There are no verified pollution spots without an existing event. A pin must be verified and not already have an event before you can organise a clean-up.",
+                "There are no verified pollution spots without an existing event. " +
+                "A pin must be verified and event-free before you can organise a clean-up.",
                 "OK");
             return;
         }
 
         var popup = new CreateEventPopup(pins, currentUserId, _apiClient);
         this.ShowPopup(popup);
-        var created = await popup.Result;
 
-        if (created)
+        if (await popup.Result)
         {
             await AppShell.DisplaySnackbarAsync("Event created! 🎉");
             await LoadEventsAsync();
@@ -251,25 +232,22 @@ public partial class EventsPage : ContentPage
     {
         BusyIndicator.IsRunning = busy;
         BusyIndicator.IsVisible = busy;
-        if (busy)
-        {
-            EmptyState.IsVisible       = false;
-            EventsCollection.IsVisible = false;
-        }
+        EmptyState.IsVisible = busy ? false : EmptyState.IsVisible;
+        EventsCollection.IsVisible = busy ? false : EventsCollection.IsVisible;
     }
 }
 
 // ──────────────────────────────────────────────────
-// View-model (display-only, no INotifyPropertyChanged needed)
+// View-model (display-only)
 // ──────────────────────────────────────────────────
 
 public sealed class EventViewModel
 {
-    public EventResponseDto  Event       { get; init; } = null!;
+    public EventResponseDto Event { get; init; } = null!;
     public string LocationDisplay { get; init; } = string.Empty;
-    public string TypeIcon        { get; init; } = string.Empty;
-    public string DateDisplay     { get; init; } = string.Empty;
-    public string HostDisplay     { get; init; } = string.Empty;
-    public string StatusLabel     { get; init; } = string.Empty;
-    public Color  StatusColor     { get; init; } = Colors.Gray;
+    public string TypeIcon { get; init; } = string.Empty;
+    public string DateDisplay { get; init; } = string.Empty;
+    public string HostDisplay { get; init; } = string.Empty;
+    public string StatusLabel { get; init; } = string.Empty;
+    public Color StatusColor { get; init; } = Colors.Gray;
 }

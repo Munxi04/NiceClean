@@ -120,15 +120,21 @@
                            TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}"/>
                     <Button x:Name="StartButton"
                             IsVisible="False"
-                            Text="▶  Start Event"
+                            Text="▶ Start Event"
                             Clicked="OnStartClicked"
                             BackgroundColor="#3B6D11" TextColor="White"
                             CornerRadius="8" FontSize="14" HeightRequest="44"/>
                     <Button x:Name="EndButton"
                             IsVisible="False"
-                            Text="⏹  End Event"
+                            Text="⏹ End Event"
                             Clicked="OnEndClicked"
                             BackgroundColor="#888888" TextColor="White"
+                            CornerRadius="8" FontSize="14" HeightRequest="44"/>
+                    <Button x:Name="ReportButton"
+                            IsVisible="False"
+                            Text="✏️ Send Report"
+                            Clicked="OnReportClicked"
+                            BackgroundColor="#FF3300" TextColor="White"
                             CornerRadius="8" FontSize="14" HeightRequest="44"/>
                 </VerticalStackLayout>
 

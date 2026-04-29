@@ -6,7 +6,7 @@ namespace NiceCleanApp.Pages.Controls;
 
 /// <summary>
 /// Shows full details for a single event.
-/// Participants can join; the host can advance the event status (Pending→Ongoing→Ended).
+/// Participants can join/leave; the host can advance status (Pending → Ongoing → Ended).
 /// </summary>
 public partial class EventDetailPopup : Popup
 {
@@ -16,14 +16,14 @@ public partial class EventDetailPopup : Popup
 
     private readonly TaskCompletionSource<bool> _tcs = new();
 
-    /// <summary>Awaitable result — true when a change was made (join / status update).</summary>
+    /// <summary>Awaitable result — <c>true</c> when a change was made (join / leave / status update).</summary>
     public Task<bool> Result => _tcs.Task;
 
     public EventDetailPopup(EventResponseDto @event, IClient apiClient, int currentUserId)
     {
         InitializeComponent();
-        _event         = @event;
-        _apiClient     = apiClient;
+        _event = @event;
+        _apiClient = apiClient;
         _currentUserId = currentUserId;
 
         _ = PopulateAsync();
@@ -35,65 +35,65 @@ public partial class EventDetailPopup : Popup
 
     private async Task PopulateAsync()
     {
-        // Header
         TitleLabel.Text = $"Event #{_event.EventId}";
 
-        // Status
         (StatusDot.Color, StatusLabel.Text, var headerColor) = _event.EventStatus switch
         {
-            EventStatus.Pending  => (Color.FromArgb("#FF9900"), "Pending",  Color.FromArgb("#CC7700")),
-            EventStatus.Ongoing  => (Color.FromArgb("#3B6D11"), "Ongoing",  Color.FromArgb("#3B6D11")),
-            EventStatus.Ended    => (Color.FromArgb("#888888"), "Ended",    Color.FromArgb("#666666")),
-            _                    => (Color.FromArgb("#888888"), "Unknown",  Color.FromArgb("#666666"))
+            EventStatus.Pending => (Color.FromArgb("#FF9900"), "Pending", Color.FromArgb("#CC7700")),
+            EventStatus.Ongoing => (Color.FromArgb("#3B6D11"), "Ongoing", Color.FromArgb("#3B6D11")),
+            _ => (Color.FromArgb("#888888"), "Ended", Color.FromArgb("#666666"))
         };
         HeaderGrid.BackgroundColor = headerColor;
 
         DateLabel.Text = _event.Date.LocalDateTime.ToString("dddd d MMMM yyyy · HH:mm");
         HostLabel.Text = _event.HostNickname;
-        ParticipantsLabel.Text = $"{_event.ParticipantCount}";
+        ParticipantsLabel.Text = _event.ParticipantCount.ToString();
 
         // Fetch pin details
         try
         {
             var pin = await _apiClient.PinGETAsync(_event.PinId);
-            SubtitleLabel.Text = string.IsNullOrWhiteSpace(pin.LocationName)
+
+            var locationName = string.IsNullOrWhiteSpace(pin.LocationName)
                 ? $"{pin.Latitude:F5}, {pin.Longitude:F5}"
                 : pin.LocationName;
 
-            LocationLabel.Text = string.IsNullOrWhiteSpace(pin.LocationName)
-                ? $"{pin.Latitude:F4}, {pin.Longitude:F4}"
-                : pin.LocationName;
-
+            SubtitleLabel.Text = locationName;
+            LocationLabel.Text = locationName;
             PollutionLabel.Text = $"{pin.PollutionType} · {pin.Severity}";
         }
         catch
         {
-            SubtitleLabel.Text  = $"Pin #{_event.PinId}";
-            LocationLabel.Text  = $"Pin #{_event.PinId}";
+            SubtitleLabel.Text = $"Pin #{_event.PinId}";
+            LocationLabel.Text = $"Pin #{_event.PinId}";
             PollutionLabel.Text = "—";
         }
 
-        ConfigureActionButtons();
-    }
-
-    private async void ConfigureActionButtons()
-    {
-        bool isHost   = _currentUserId == _event.HostUserId;
-        bool isEnded  = _event.EventStatus == EventStatus.Ended;
-        bool isParticipant = await _apiClient.HasJoinedAsync(_event.EventId, _currentUserId);
-
-        // ── Participant: show Join if event is active, user is not host, not participant and event is joinable ──
-        JoinButton.IsVisible = !isHost && !isEnded && !isParticipant;
-        LeaveButton.IsVisible = !isHost && !isEnded && isParticipant;
-
-        // ── Host controls ──
-        HostActions.IsVisible = isHost && !isEnded;
-        StartButton.IsVisible = isHost && _event.EventStatus == EventStatus.Pending;
-        EndButton.IsVisible   = isHost && _event.EventStatus == EventStatus.Ongoing;
+        await ConfigureActionButtonsAsync();
     }
 
     // ──────────────────────────────────────────────
-    // Participant: join
+    // Button visibility
+    // ──────────────────────────────────────────────
+
+    private async Task ConfigureActionButtonsAsync()
+    {
+        bool isHost = _currentUserId == _event.HostUserId;
+        bool isEnded = _event.EventStatus == EventStatus.Ended;
+        bool isParticipant = await _apiClient.HasJoinedAsync(_event.EventId, _currentUserId);
+        bool isReported = false; //TODO: await _apiClient.HasReportAsync(_event.EventId);
+
+        JoinButton.IsVisible = !isHost && !isEnded && !isParticipant;
+        LeaveButton.IsVisible = !isHost && !isEnded && isParticipant;
+
+        HostActions.IsVisible = isHost && !isReported;
+        StartButton.IsVisible = isHost && _event.EventStatus == EventStatus.Pending;
+        EndButton.IsVisible = isHost && _event.EventStatus == EventStatus.Ongoing;
+        ReportButton.IsVisible = isHost && isEnded && !isReported;
+    }
+
+    // ──────────────────────────────────────────────
+    // Participant: join / leave
     // ──────────────────────────────────────────────
 
     private async void OnJoinClicked(object? sender, EventArgs e)
@@ -101,13 +101,9 @@ public partial class EventDetailPopup : Popup
         SetBusy(true);
         try
         {
-            await _apiClient.JoinAsync(_event.EventId, new ParticipationDto
-            {
-                UserId = _currentUserId
-            });
-
+            await _apiClient.JoinAsync(_event.EventId, new ParticipationDto { UserId = _currentUserId });
             ShowFeedback("You're in! See you at the clean walk 🌿", isError: false);
-            ConfigureActionButtons();
+            await ConfigureActionButtonsAsync();
             _tcs.TrySetResult(true);
         }
         catch (ApiException<ProblemDetails> ex) { ShowFeedback(ex.Result?.Detail ?? "Could not join event.", isError: true); }
@@ -122,31 +118,18 @@ public partial class EventDetailPopup : Popup
         try
         {
             await _apiClient.RemoveAsync(_event.EventId, _currentUserId);
-
             ShowFeedback("You've left the event.", isError: false);
-            ConfigureActionButtons();
+            await ConfigureActionButtonsAsync();
             _tcs.TrySetResult(true);
         }
-        catch (ApiException<ProblemDetails> ex)
-        {
-            ShowFeedback(ex.Result?.Detail ?? "Could not leave event.", isError: true);
-        }
-        catch (ApiException ex)
-        {
-            ShowFeedback($"Server error ({ex.StatusCode}).", isError: true);
-        }
-        catch (Exception ex)
-        {
-            ShowFeedback($"Unexpected error: {ex.Message}", isError: true);
-        }
-        finally
-        {
-            SetBusy(false);
-        }
+        catch (ApiException<ProblemDetails> ex) { ShowFeedback(ex.Result?.Detail ?? "Could not leave event.", isError: true); }
+        catch (ApiException ex) { ShowFeedback($"Server error ({ex.StatusCode}).", isError: true); }
+        catch (Exception ex) { ShowFeedback($"Unexpected error: {ex.Message}", isError: true); }
+        finally { SetBusy(false); }
     }
 
     // ──────────────────────────────────────────────
-    // Host: start / end
+    // Host: start / end / report
     // ──────────────────────────────────────────────
 
     private async void OnStartClicked(object? sender, EventArgs e)
@@ -157,10 +140,8 @@ public partial class EventDetailPopup : Popup
         SetBusy(true);
         try
         {
-            // 1. Mark the event as Ended on the server.
             await _apiClient.StatusAsync(_event.EventId, EventStatus.Ended, _currentUserId);
 
-            // Update local UI to reflect the new status immediately.
             ShowFeedback("Event ended. Thanks for cleaning up! 🌱", isError: false);
             StartButton.IsVisible = false;
             EndButton.IsVisible = false;
@@ -182,9 +163,27 @@ public partial class EventDetailPopup : Popup
 
         if (report is not null)
         {
-            // TODO: POST report to your API endpoint when available.
-            // e.g. await _apiClient.SubmitReportAsync(new ReportDto { ... });
+            // TODO: POST report to API when endpoint is available.
+            await AppShell.DisplaySnackbarAsync(
+                $"🌿 Report saved — {report.BagCount} bag{(report.BagCount == 1 ? "" : "s")}, " +
+                $"~{report.LitresTotal} L collected. Amazing work!");
+        }
+        else
+        {
+            await AppShell.DisplaySnackbarAsync("Event ended. Great job cleaning up! 🌿");
+        }
+    }
 
+    private async void OnReportClicked(object? sender, EventArgs e)
+    {
+        var reportPopup = new EventReportPopup();
+        Shell.Current.CurrentPage.ShowPopup(reportPopup);
+        var report = await reportPopup.Result;
+        await ConfigureActionButtonsAsync();
+
+        if (report is not null)
+        {
+            // TODO: POST report to API when endpoint is available.
             await AppShell.DisplaySnackbarAsync(
                 $"🌿 Report saved — {report.BagCount} bag{(report.BagCount == 1 ? "" : "s")}, " +
                 $"~{report.LitresTotal} L collected. Amazing work!");
@@ -208,34 +207,19 @@ public partial class EventDetailPopup : Popup
 
             ShowFeedback(message, isError: false);
 
-            // Hide host controls — status changed
             StartButton.IsVisible = false;
-            EndButton.IsVisible   = false;
-            StatusDot.Color       = newStatus == EventStatus.Ongoing
+            EndButton.IsVisible = newStatus == EventStatus.Ongoing;
+            StatusDot.Color = newStatus == EventStatus.Ongoing
                 ? Color.FromArgb("#3B6D11")
                 : Color.FromArgb("#888888");
             StatusLabel.Text = newStatus.ToString();
 
             _tcs.TrySetResult(true);
         }
-        catch (ApiException<ProblemDetails> ex)
-        {
-            ShowFeedback(ex.Result?.Detail ?? "Could not update status.", isError: true);
-        }
-        catch (ApiException ex)
-        {
-            ShowFeedback($"Server error ({ex.StatusCode}).", isError: true);
-        }
-        catch (Exception ex)
-        {
-            ShowFeedback($"Unexpected error: {ex.Message}", isError: true);
-        }
-        finally
-        {
-            SetBusy(false);
-        }
-
-        ConfigureActionButtons();
+        catch (ApiException<ProblemDetails> ex) { ShowFeedback(ex.Result?.Detail ?? "Could not update status.", isError: true); }
+        catch (ApiException ex) { ShowFeedback($"Server error ({ex.StatusCode}).", isError: true); }
+        catch (Exception ex) { ShowFeedback($"Unexpected error: {ex.Message}", isError: true); }
+        finally { SetBusy(false); }
     }
 
     // ──────────────────────────────────────────────
@@ -254,18 +238,17 @@ public partial class EventDetailPopup : Popup
 
     private void ShowFeedback(string message, bool isError)
     {
-        FeedbackLabel.Text      = message;
-        FeedbackLabel.TextColor = isError
-            ? Color.FromArgb("#E53935")
-            : Color.FromArgb("#3B6D11");
+        FeedbackLabel.Text = message;
+        FeedbackLabel.TextColor = isError ? Color.FromArgb("#E53935") : Color.FromArgb("#3B6D11");
         FeedbackLabel.IsVisible = true;
     }
 
     private void SetBusy(bool busy)
     {
-        JoinButton.IsEnabled    = !busy;
-        StartButton.IsEnabled   = !busy;
-        EndButton.IsEnabled     = !busy;
+        JoinButton.IsEnabled = !busy;
+        LeaveButton.IsEnabled = !busy;
+        StartButton.IsEnabled = !busy;
+        EndButton.IsEnabled = !busy;
         BusyIndicator.IsRunning = busy;
         BusyIndicator.IsVisible = busy;
     }
