@@ -1,64 +1,25 @@
 ﻿using NiceCleanLib.Enums;
 using NiceCleanLib.Models;
 using NiceCleanLib.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NiceCleanLib.Services.Repositories;
 
+/// <summary>
+/// In-memory pin repository for development and testing.
+/// For production, use PinRepositoryDB which connects to the actual database.
+/// </summary>
 public class PinRepository : IPinRepository
 {
     private readonly List<Pin> _pins = new();
     private int _nextId = 1;
 
-    // Dummy data for testing purposes (3 pins with different severities, types, and statuses)
+    /// <summary>
+    /// Initialize empty repository. Dummy data removed for production-ready deployment.
+    /// </summary>
     public PinRepository()
     {
-        Add(new Pin(
-            id: 0,
-            userId: 1,
-            creationDate: DateTime.UtcNow.AddDays(-2),
-            severity: PollutionSeverity.High,
-            radius: Pin.StandardRadiusMeters,
-            status: PinStatus.Verified,
-            pollutionType: PollutionType.Plastic,
-            latitude: 43.6950,
-            longitude: 7.2586,
-            locationName: "Promenade des Anglais",
-            hasEvent: false,
-            eventId: 0
-        ));
-
-        Add(new Pin(
-            id: 0,
-            userId: 2,
-            creationDate: DateTime.UtcNow.AddHours(-5),
-            severity: PollutionSeverity.Moderate,
-            radius: Pin.StandardRadiusMeters,
-            status: PinStatus.Unverified,
-            pollutionType: PollutionType.Furniture,
-            latitude: 43.7034,
-            longitude: 7.2663,
-            locationName: "Avenue Jean Médecin Area",
-            hasEvent: false,
-            eventId: 0
-        ));
-
-        Add(new Pin(
-            id: 0,
-            userId: 1,
-            creationDate: DateTime.UtcNow.AddDays(-10),
-            severity: PollutionSeverity.Low,
-            radius: Pin.StandardRadiusMeters,
-            status: PinStatus.Unverified,
-            pollutionType: PollutionType.Glass,
-            latitude: 43.6967,
-            longitude: 7.2755,
-            locationName: "Vieux Nice",
-            hasEvent: false,
-            eventId: 0
-        ));
+        // Development: Start with empty collection
+        // Dummy data removed to ensure production-ready state
     }
 
     public List<Pin> GetAll()
@@ -87,9 +48,7 @@ public class PinRepository : IPinRepository
         }
 
         var index = _pins.IndexOf(existing);
-
         pin.Id = id;
-
         _pins[index] = pin;
         return pin;
     }
@@ -124,7 +83,11 @@ public class PinRepository : IPinRepository
         return distance <= thresholdMeters;
     }
 
-    // Helper method for distance calculation using Haversine formula. Used in GetPinAtLocation to check proximity of pins.
+    /// <summary>
+    /// Calculates distance between two coordinates using Haversine formula (in meters).
+    /// Used in GetPinAtLocation to check proximity of pins.
+    /// Note: In production, this should be replaced with database spatial queries for performance.
+    /// </summary>
     private static double HaversineMeters(double lat1, double lon1, double lat2, double lon2)
     {
         const double R = 6371000;

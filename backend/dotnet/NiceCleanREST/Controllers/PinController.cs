@@ -1,13 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NiceCleanLib.Enums;
 using NiceCleanLib.Models;
 using NiceCleanLib.Services.Interfaces;
 using NiceCleanREST.Contracts;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace NiceCleanREST.Controllers;
 
+/// <summary>
+/// Pin management API endpoints for pollution report creation, updates, and voting.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class PinController : ControllerBase
@@ -25,7 +27,9 @@ public class PinController : ControllerBase
         _voteRepo = voteRepo;
     }
 
-    // GET: api/<PinController>
+    /// <summary>
+    /// Get all pins (public endpoint).
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -41,7 +45,9 @@ public class PinController : ControllerBase
         return Ok(result);
     }
 
-    // GET api/<PinController>/5
+    /// <summary>
+    /// Get pin by ID (public endpoint).
+    /// </summary>
     [HttpGet("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -57,7 +63,9 @@ public class PinController : ControllerBase
         return Ok(pin);
     }
 
-    // GET api/<PinController>/5/hasVoted/2
+    /// <summary>
+    /// Check if user has voted on a pin (public endpoint).
+    /// </summary>
     [HttpGet("{pinId}/hasVoted/{userId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -74,7 +82,9 @@ public class PinController : ControllerBase
         return Ok(cannotVote);
     }
 
-    // GET api/<PinController>/atLocation
+    /// <summary>
+    /// Get pin near location (public endpoint).
+    /// </summary>
     [HttpGet("atLocation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -89,7 +99,9 @@ public class PinController : ControllerBase
         return Ok(pin);
     }
 
-    // GET api/<PinController>/isUserNear?userLat=55.6&userLon=12.5&targetLat=55.602&targetLon=12.502
+    /// <summary>
+    /// Check if user is near a location (public endpoint).
+    /// </summary>
     [HttpGet("isUserNear")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<bool> IsUserNear([FromQuery] double userLat, [FromQuery] double userLon, [FromQuery] double targetLat, [FromQuery] double targetLon)
@@ -99,12 +111,21 @@ public class PinController : ControllerBase
         return Ok(isNear);
     }
 
-    // POST api/<PinController>
+    /// <summary>
+    /// Create a new pollution pin (requires authentication).
+    /// </summary>
     [HttpPost]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<Pin> Post([FromBody] PinCreateDto dto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var user = _userRepo.GetById(dto.UserId);
 
         if (user == null)
@@ -144,13 +165,22 @@ public class PinController : ControllerBase
         );
     }
 
-    // POST api/<PinController>/5/vote
+    /// <summary>
+    /// Vote on a pin (requires authentication).
+    /// </summary>
     [HttpPost("{id}/vote")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<Pin> Vote(int id, [FromBody] PinVoteDto dto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var pin = _pinRepo.GetById(id);
 
         if (pin == null)
@@ -199,12 +229,22 @@ public class PinController : ControllerBase
         return Ok(pin);
     }
 
-    // PUT api/<PinController>/5
+    /// <summary>
+    /// Update a pin (requires authentication).
+    /// </summary>
     [HttpPut("{id}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<Pin> Put(int id, [FromBody] PinUpdateDto dto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var existingPin = _pinRepo.GetById(id);
 
         if (existingPin == null)
@@ -223,10 +263,14 @@ public class PinController : ControllerBase
         return Ok(updated);
     }
 
-    // DELETE api/<PinController>/5
+    /// <summary>
+    /// Delete a pin (requires authentication).
+    /// </summary>
     [HttpDelete("{id}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<Pin> Delete(int id)
     {
         var deleted = _pinRepo.Delete(id);
@@ -239,3 +283,4 @@ public class PinController : ControllerBase
         return Ok(deleted);
     }
 }
+

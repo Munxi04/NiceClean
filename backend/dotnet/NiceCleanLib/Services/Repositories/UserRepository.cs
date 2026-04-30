@@ -1,59 +1,24 @@
 ﻿using NiceCleanLib.Models;
 using NiceCleanLib.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Linq;
 
 namespace NiceCleanLib.Services.Repositories;
 
+/// <summary>
+/// In-memory user repository for development and testing.
+/// Note: Password hashing is handled by AuthService in the controller layer.
+/// </summary>
 public class UserRepository : IUserRepository
 {
     private readonly List<User> _users = new();
     private int _nextId = 1;
 
-    // Dummy data with 4 initial users for testing purposes
+    /// <summary>
+    /// Initialize empty repository. In production, use UserRepositoryDB instead.
+    /// </summary>
     public UserRepository()
     {
-        Add(new User(
-            id: 0,
-            email: "test@test.com",
-            password: "123",
-            age: new DateTime(1990, 5, 15),
-            nickname: "SuperUser",
-            numberOfWalks: 12,
-            isVerified: true
-        ));
-
-        Add(new User(
-            id: 0,
-            email: "bel@bel.com",
-            password: "123",
-            age: new DateTime(1985, 10, 20),
-            nickname: "Bel",
-            numberOfWalks: 2,
-            isVerified: false
-        ));
-
-        Add(new User(
-            id: 0,
-            email: "jul@jul.com",
-            password: "123",
-            age: new DateTime(1995, 1, 10),
-            nickname: "Jul",
-            numberOfWalks: 0,
-            isVerified: false
-        ));
-
-        Add(new User(
-            id: 0,
-            email: "pat@pat.com",
-            password: "123",
-            age: new DateTime(1995, 1, 10),
-            nickname: "Pat",
-            numberOfWalks: 0,
-            isVerified: false
-        ));
+        // Development: Start with empty collection
+        // Dummy data removed for production-ready deployment
     }
 
     public List<User> GetAll()
@@ -87,9 +52,7 @@ public class UserRepository : IUserRepository
         }
 
         var index = _users.IndexOf(existing);
-
         user.Id = id;
-
         _users[index] = user;
         return user;
     }
@@ -104,3 +67,4 @@ public class UserRepository : IUserRepository
         return user;
     }
 }
+

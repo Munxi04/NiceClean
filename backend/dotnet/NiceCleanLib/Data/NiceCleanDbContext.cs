@@ -26,7 +26,7 @@ public class NiceCleanDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("UserID");
             entity.Property(e => e.Email).HasMaxLength(127).IsRequired();
-            entity.Property(e => e.Password).HasMaxLength(127).IsRequired();
+            entity.Property(e => e.Password).HasMaxLength(255).IsRequired(); // BCrypt hash is ~60 chars
             entity.Property(e => e.Age).HasColumnName("Age").IsRequired();
             entity.Property(e => e.Nickname).HasMaxLength(63);
             entity.Property(e => e.NumberOfWalks).HasDefaultValue(0);
@@ -55,6 +55,16 @@ public class NiceCleanDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Performance indexes for location queries and filtering
+            entity.HasIndex(e => new { e.Latitude, e.Longitude, e.Status })
+                .HasName("idx_pin_location_status");
+            entity.HasIndex(e => e.Status)
+                .HasName("idx_pin_status");
+            entity.HasIndex(e => e.UserId)
+                .HasName("idx_pin_userid");
+            entity.HasIndex(e => e.CreationDate)
+                .HasName("idx_pin_creationdate");
         });
 
         // Configure PinVotes table
@@ -63,7 +73,13 @@ public class NiceCleanDbContext : DbContext
             entity.HasKey(e => e.Id);
 
             // This is the magic rule to prevent duplicate votes per pin by the same user:
-            entity.HasIndex(e => new { e.PinId, e.UserId }).IsUnique();
+            entity.HasIndex(e => new { e.PinId, e.UserId })
+                .IsUnique()
+                .HasName("idx_pinvote_unique_user_pin");
+
+            // Performance index for vote counting queries
+            entity.HasIndex(e => e.PinId)
+                .HasName("idx_pinvote_pinid");
 
             entity.Property(e => e.VoteType).HasConversion<string>();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");

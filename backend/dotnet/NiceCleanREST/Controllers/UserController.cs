@@ -1,27 +1,36 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NiceCleanLib.Models;
 using NiceCleanLib.Services.Interfaces;
 using NiceCleanREST.Contracts;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using NiceCleanREST.Services;
 
 namespace NiceCleanREST.Controllers;
 
+/// <summary>
+/// User management API endpoints for authentication and user profile operations.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class UserController : ControllerBase
 {
     private readonly IUserRepository _repo;
+    private readonly IAuthService _authService;
 
-    public UserController(IUserRepository repo)
+    public UserController(IUserRepository repo, IAuthService authService)
     {
         _repo = repo;
+        _authService = authService;
     }
 
-    // GET: api/<UserController>
+    /// <summary>
+    /// Get all users (requires authentication).
+    /// </summary>
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<IEnumerable<User>> Get()
     {
         var result = _repo.GetAll();
@@ -34,10 +43,14 @@ public class UserController : ControllerBase
         return Ok(result);
     }
 
-    // GET api/<UserController>/5
+    /// <summary>
+    /// Get user by ID (requires authentication).
+    /// </summary>
     [HttpGet("{id}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<User> GetById(int id)
     {
         var user = _repo.GetById(id);
@@ -50,14 +63,36 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
-    // POST api/<UserController>
+    /// <summary>
+    /// Register a new user account (public endpoint).
+    /// </summary>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    public ActionResult<User> Post(User user)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<User> Post([FromBody] LoginDto loginDto)
     {
-        user.IsVerified = false;
-        user.NumberOfWalks = 0;
-        user.Id = 0;
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        // Check if user already exists
+        var existingUser = _repo.GetByEmail(loginDto.Email);
+        if (existingUser != null)
+        {
+            return BadRequest("Email already registered.");
+        }
+
+        // Create new user with hashed password
+        var user = new User(
+            id: 0,
+            email: loginDto.Email,
+            password: _authService.HashPassword(loginDto.Password),
+            age: DateTime.Now,
+            nickname: loginDto.Email.Split('@')[0], // Default nickname from email
+            numberOfWalks: 0,
+            isVerified: false
+        );
 
         var created = _repo.Add(user);
 
@@ -67,33 +102,59 @@ public class UserController : ControllerBase
         );
     }
 
-    // POST api/<UserController>/login
+    /// <summary>
+    /// Authenticate user and return JWT token (public endpoint).
+    /// </summary>
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public ActionResult<User> Login([FromBody] LoginDto loginDto)
+    public ActionResult<object> Login([FromBody] LoginDto loginDto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var user = _repo.GetByEmail(loginDto.Email);
 
-        if (user == null)
+        if (user == null || !_authService.VerifyPassword(loginDto.Password, user.Password))
         {
             return Unauthorized("Invalid email or password.");
         }
 
-        if (user.Password != loginDto.Password)
-        {
-            return Unauthorized("Invalid email or password.");
-        }
+        // Generate JWT token for authenticated user
+        var token = _authService.GenerateJwtToken(user);
 
-        return Ok(user);
+        return Ok(new
+        {
+            success = true,
+            token,
+            user = new
+            {
+                user.Id,
+                user.Email,
+                user.Nickname,
+                user.IsVerified
+            }
+        });
     }
 
-    // PUT api/<UserController>/5
+    /// <summary>
+    /// Update user profile (requires authentication).
+    /// </summary>
     [HttpPut("{id}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<User> Put(int id, User userData)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public ActionResult<User> Put(int id, [FromBody] User userData)
     {
+        if (userData == null)
+        {
+            return BadRequest("User data is required.");
+        }
+
         var updated = _repo.Update(id, userData);
 
         if (updated == null)
@@ -104,10 +165,14 @@ public class UserController : ControllerBase
         return Ok(updated);
     }
 
-    // DELETE api/<UserController>/5
+    /// <summary>
+    /// Delete user account (requires authentication).
+    /// </summary>
     [HttpDelete("{id}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public ActionResult<User> Delete(int id)
     {
         var deleted = _repo.Delete(id);
