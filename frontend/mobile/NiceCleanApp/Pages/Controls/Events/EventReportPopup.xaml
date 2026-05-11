@@ -95,9 +95,9 @@
                             </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
                                 <Label Text="🪣" FontSize="22" HorizontalOptions="Center"/>
-                                <Label Text="Small" FontSize="13" FontAttributes="Bold"
+                                <Label x:Name="SmallLabel" Text="Small" FontSize="13" FontAttributes="Bold"
                                        TextColor="White" HorizontalOptions="Center"/>
-                                <Label Text="~10 L" FontSize="11"
+                                <Label x:Name="SmallSubLabel" Text="~10 L" FontSize="11"
                                        TextColor="#C5E49A" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </Border>
@@ -113,10 +113,10 @@
                             </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
                                 <Label Text="🛢️" FontSize="22" HorizontalOptions="Center"/>
-                                <Label Text="Medium" FontSize="13" FontAttributes="Bold"
+                                <Label x:Name="MediumLabel" Text="Medium" FontSize="13" FontAttributes="Bold"
                                        TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
                                        HorizontalOptions="Center"/>
-                                <Label Text="~30 L" FontSize="11"
+                                <Label x:Name="MediumSubLabel" Text="~30 L" FontSize="11"
                                        TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}"
                                        HorizontalOptions="Center"/>
                             </VerticalStackLayout>
@@ -133,10 +133,10 @@
                             </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
                                 <Label Text="🗑️" FontSize="22" HorizontalOptions="Center"/>
-                                <Label Text="Large" FontSize="13" FontAttributes="Bold"
+                                <Label x:Name="LargeLabel" Text="Large" FontSize="13" FontAttributes="Bold"
                                        TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
                                        HorizontalOptions="Center"/>
-                                <Label Text="~60 L" FontSize="11"
+                                <Label x:Name="LargeSubLabel" Text="~60 L" FontSize="11"
                                        TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}"
                                        HorizontalOptions="Center"/>
                             </VerticalStackLayout>
@@ -149,14 +149,14 @@
                                 BackgroundColor="{AppThemeBinding Light=#F9F9F9, Dark=#2C2C2C}">
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnVolumeSelected"
-                                                      CommandParameter="XLarge"/>
+                                                      CommandParameter="ExtraLarge"/>
                             </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
                                 <Label Text="🚛" FontSize="22" HorizontalOptions="Center"/>
-                                <Label Text="Extra Large" FontSize="13" FontAttributes="Bold"
+                                <Label x:Name="XLargeLabel" Text="Extra Large" FontSize="13" FontAttributes="Bold"
                                        TextColor="{AppThemeBinding Light=#333333, Dark=#EEEEEE}"
                                        HorizontalOptions="Center"/>
-                                <Label Text="~100 L" FontSize="11"
+                                <Label x:Name="XLargeSubLabel" Text="~100 L" FontSize="11"
                                        TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}"
                                        HorizontalOptions="Center"/>
                             </VerticalStackLayout>
@@ -182,6 +182,11 @@
                        TextColor="#E53935"
                        FontSize="13"
                        HorizontalTextAlignment="Center"/>
+
+                <!-- Busy -->
+                <ActivityIndicator x:Name="BusyIndicator"
+                                   IsRunning="False" IsVisible="False"
+                                   Color="#3B6D11" HorizontalOptions="Center"/>
 
                 <!-- Actions -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">

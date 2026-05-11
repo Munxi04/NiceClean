@@ -1,49 +1,68 @@
 using CommunityToolkit.Maui.Views;
+using NiceCleanApp.Services;
 
 namespace NiceCleanApp.Pages.Controls;
 
 /// <summary>
 /// Shown immediately after the host ends an event.
-/// Collects the number of bags used and their volume category,
-/// then exposes the result via <see cref="Result"/>.
+/// Collects number of bags and bag volume, then surfaces the result via
+/// <see cref="Result"/> so the caller can POST to <c>api/Report</c>.
 /// </summary>
 public partial class EventReportPopup : Popup
 {
-    // ── Public result type ──────────────────────────────────────────────────
-    public sealed record ReportResult(int BagCount, string BagVolume, int LitresTotal);
+    // ── Result type ─────────────────────────────────────────────────────────
+    /// <summary>
+    /// The values the host entered, ready to be passed directly to
+    /// <see cref="ReportCreateDto"/>.
+    /// </summary>
+    public sealed record ReportResult(int NumberOfBags, BagVolume BagVolume);
 
     private readonly TaskCompletionSource<ReportResult?> _tcs = new();
 
     /// <summary>
-    /// Awaitable result. <c>null</c> when the user skips or dismisses.
+    /// Awaitable result; <c>null</c> when the user skips or dismisses.
     /// </summary>
     public Task<ReportResult?> Result => _tcs.Task;
 
-    // ── Internal state ──────────────────────────────────────────────────────
-    private static readonly Dictionary<string, int> VolumeLitres = new()
+    // ── Litres lookup — mirrors BagVolume enum order ─────────────────────────
+    private static readonly Dictionary<BagVolume, int> VolumeLitres = new()
     {
-        ["Small"]  = 10,
-        ["Medium"] = 30,
-        ["Large"]  = 60,
-        ["XLarge"] = 100,
+        [BagVolume.Small] = 10,
+        [BagVolume.Medium] = 30,
+        [BagVolume.Large] = 60,
+        [BagVolume.ExtraLarge] = 100,
     };
 
-    private int    _bagCount      = 1;
-    private string _selectedVolume = "Small"; // default matches pre-highlighted card
+    // ── Card map — keyed by the CommandParameter string in XAML ─────────────
+    private Dictionary<string, (Border Card, Label MainLabel, Label SubLabel)> _cards = [];
+
+    private int _bagCount = 1;
+    private BagVolume _selectedVolume = BagVolume.Small;
 
     public EventReportPopup()
     {
         InitializeComponent();
+
+        // Build the card map after InitializeComponent so x:Name fields exist.
+        _cards = new()
+        {
+            ["Small"] = (SmallCard, SmallLabel, SmallSubLabel),
+            ["Medium"] = (MediumCard, MediumLabel, MediumSubLabel),
+            ["Large"] = (LargeCard, LargeLabel, LargeSubLabel),
+            ["ExtraLarge"] = (XLargeCard, XLargeLabel, XLargeSubLabel),
+        };
+
+        DecrementButton.IsEnabled = false; // starts at 1
         RefreshSummary();
     }
 
-    // ── Bag-count controls ──────────────────────────────────────────────────
+    // ── Bag-count stepper ───────────────────────────────────────────────────
 
     private void OnIncrementClicked(object? sender, EventArgs e)
     {
         _bagCount++;
         BagCountLabel.Text = _bagCount.ToString();
-        DecrementButton.IsEnabled = _bagCount > 1;
+        DecrementButton.IsEnabled = true;
         RefreshSummary();
     }
 
@@ -60,44 +79,33 @@ public partial class EventReportPopup : Popup
 
     private void OnVolumeSelected(object? sender, TappedEventArgs e)
     {
-        if (e.Parameter is not string volume) return;
+        if (e.Parameter is not string key) return;
+        if (!Enum.TryParse<BagVolume>(key, out var volume)) return;
+
         _selectedVolume = volume;
-        HighlightVolumeCard(volume);
+        HighlightVolumeCard(key);
         RefreshSummary();
     }
 
-    private void HighlightVolumeCard(string selected)
+    private void HighlightVolumeCard(string selectedKey)
     {
-        var active   = Color.FromArgb("#3B6D11");
-        var inactiveStrokeLight = Color.FromArgb("#E0E0E0");
-        var inactiveStrokeDark  = Color.FromArgb("#444444");
-        var inactiveBgLight     = Color.FromArgb("#F9F9F9");
-        var inactiveBgDark      = Color.FromArgb("#2C2C2C");
-
         bool isDark = Application.Current?.RequestedTheme == AppTheme.Dark
-                   || Application.Current?.UserAppTheme   == AppTheme.Dark;
+                   || Application.Current?.UserAppTheme == AppTheme.Dark;
 
-        var inactiveStroke = isDark ? inactiveStrokeDark : inactiveStrokeLight;
-        var inactiveBg     = isDark ? inactiveBgDark     : inactiveBgLight;
+        var activeColor = Color.FromArgb("#3B6D11");
+        var inactiveStroke = isDark ? Color.FromArgb("#444444") : Color.FromArgb("#E0E0E0");
+        var inactiveBg = isDark ? Color.FromArgb("#2C2C2C") : Color.FromArgb("#F9F9F9");
+        var inactiveText = isDark ? Color.FromArgb("#EEEEEE") : Color.FromArgb("#333333");
+        var inactiveSubText = isDark ? Color.FromArgb("#AAAAAA") : Color.FromArgb("#888888");
+        var activeSubText = Color.FromArgb("#C5E49A");
 
-        foreach (var (card, key) in new[]
+        foreach (var (key, (card, mainLbl, subLbl)) in _cards)
         {
-            (SmallCard,  "Small"),
-            (MediumCard, "Medium"),
-            (LargeCard,  "Large"),
-            (XLargeCard, "XLarge"),
-        })
-        {
-            bool isActive = key == selected;
-            card.Stroke          = isActive ? active        : inactiveStroke;
-            card.BackgroundColor = isActive ? active        : inactiveBg;
-
-            // Re-tint child text labels
-            foreach (var lbl in card.GetVisualTreeDescendants().OfType<Label>())
-            {
-                lbl.TextColor = isActive ? Colors.White
-                    : (isDark ? Color.FromArgb("#EEEEEE") : Color.FromArgb("#333333"));
-            }
+            bool isActive = key == selectedKey;
+            card.Stroke = isActive ? activeColor : inactiveStroke;
+            card.BackgroundColor = isActive ? activeColor : inactiveBg;
+            mainLbl.TextColor = isActive ? Colors.White : inactiveText;
+            subLbl.TextColor = isActive ? activeSubText : inactiveSubText;
         }
     }
 
@@ -105,11 +113,12 @@ public partial class EventReportPopup : Popup
 
     private void RefreshSummary()
     {
-        int litresEach  = VolumeLitres.TryGetValue(_selectedVolume, out var l) ? l : 0;
+        int litresEach = VolumeLitres[_selectedVolume];
         int litresTotal = _bagCount * litresEach;
+        string volName = _selectedVolume == BagVolume.ExtraLarge ? "Extra Large" : _selectedVolume.ToString();
 
         SummaryLabel.Text =
-            $"{_bagCount} × {_selectedVolume} bag{(_bagCount == 1 ? "" : "s")} " +
+            $"{_bagCount} × {volName} bag{(_bagCount == 1 ? "" : "s")} " +
             $"≈ {litresTotal} L of waste collected 🌿";
     }
 
@@ -117,10 +126,7 @@ public partial class EventReportPopup : Popup
 
     private void OnSubmitClicked(object? sender, EventArgs e)
     {
-        int litresEach  = VolumeLitres.TryGetValue(_selectedVolume, out var l) ? l : 0;
-        int litresTotal = _bagCount * litresEach;
-
-        _tcs.TrySetResult(new ReportResult(_bagCount, _selectedVolume, litresTotal));
+        _tcs.TrySetResult(new ReportResult(_bagCount, _selectedVolume));
         _ = CloseAsync();
     }
 
